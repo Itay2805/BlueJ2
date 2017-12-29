@@ -1,14 +1,14 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
+  "modid": "bluej",
+  "name": "BlueJ IDE",
+  "description": "BlueJ IDE for DeviceAPI.",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "url": "",
   "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
+  "authorList": ["itay2805"],
+  "credits": "MrCrayfish for making DeviceAPI",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
