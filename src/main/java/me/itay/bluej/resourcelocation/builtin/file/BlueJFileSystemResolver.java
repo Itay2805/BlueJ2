@@ -7,12 +7,7 @@ import me.itay.bluej.resourcelocation.BlueJResourceLocation;
 public class BlueJFileSystemResolver implements BlueJResolver {
 
 	@Override
-	public boolean canResolve(BlueJResourceLocation location) {
-		return location.getDomain().equalsIgnoreCase("file") && location.isBase();
-	}
-
-	@Override
-	public BlueJResolvedResource resolve(BlueJResourceLocation location) {
+	public BlueJResolvedResource resolve(BlueJResourceLocation location, BlueJResolvedResource parent) {
 		return new BlueJResolvedFile(location.getPath());
 	}
 	

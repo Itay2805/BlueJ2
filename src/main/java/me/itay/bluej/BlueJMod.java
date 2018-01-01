@@ -17,6 +17,6 @@ public class BlueJMod
     @EventHandler
     public void init(FMLInitializationEvent event)
     {
-    	ApplicationManager.registerApplication(new ResourceLocation(MODID, "bluej"), BlueJApp.class);
+    	ApplicationManager.registerApplication(new ResourceLocation("bluej", "ide"), BlueJApp.class);
     }
 }

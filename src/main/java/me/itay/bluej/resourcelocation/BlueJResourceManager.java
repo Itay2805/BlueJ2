@@ -1,16 +1,24 @@
 package me.itay.bluej.resourcelocation;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 import me.itay.bluej.resourcelocation.builtin.file.BlueJFileSystemResolver;
+import me.itay.bluej.resourcelocation.builtin.project.ProjectSourceResolver;
 
 public class BlueJResourceManager {
 	
-	private static List<BlueJResolver> resolvers = new ArrayList<>();
+	private static HashMap<String, BlueJResolver> resolvers = new HashMap<>();
 	
 	static {
-		resolvers.add(new BlueJFileSystemResolver());
+		registerResolver("file", new BlueJFileSystemResolver());
+		registerResolver("bluej_prj_src", new ProjectSourceResolver());
+	}
+	
+	public static void registerResolver(String domain, BlueJResolver resolver) {
+		if(resolvers.containsKey(domain)) {
+			throw new IllegalArgumentException("resolver for that domain already exists");
+		}
+		resolvers.put(domain, resolver);
 	}
 	
 	public static BlueJResolvedResource resolve(String path) {
@@ -18,12 +26,15 @@ public class BlueJResourceManager {
 	}
 	
 	public static BlueJResolvedResource resolve(BlueJResourceLocation location) {
-		for(BlueJResolver resolver : resolvers) {
-			if(resolver.canResolve(location)) {
-				return resolver.resolve(location);
+		if(resolvers.containsKey(location.getDomain())) {
+			if(location.isBase()) {
+				return resolvers.get(location.getDomain()).resolve(location, null);
 			}
+			BlueJResolvedResource base = resolve(location.getParent());
+			return resolvers.get(location.getDomain()).resolve(location, base);
+		}else {
+			return null;
 		}
-		return null; 
 	}
 	
 }
