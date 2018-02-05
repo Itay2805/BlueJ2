@@ -56,6 +56,7 @@ public class BlueJApp extends Application {
 	}
 
 	private Project currentProject;
+	private String currentSourceFile;
 
 	@Override
 	public void init() {
@@ -90,7 +91,7 @@ public class BlueJApp extends Application {
 		btnSaveFile = new Button(getNextBtnPos(), 1, Icons.SAVE);
 		btnSaveFile.setToolTip("Save File", "Save current file");
 		btnSaveFile.setClickListener(this::saveSourceFileHandler);
-		
+
 		addComponent(btnNewFile);
 		addComponent(btnDeleteFile);
 		addComponent(btnSaveFile);
@@ -192,6 +193,9 @@ public class BlueJApp extends Application {
 
 	private void deleteSourceFileHandler(int x, int y, int button) {
 		String name = lstFiles.getSelectedItem();
+		if(name.equals(currentSourceFile)) {
+			toggleFileButtons(false);
+		}
 		currentProject.deleteSourceFile(name, () -> {
 			lstFiles.setItems(new ArrayList<>());
 			for (SourceFile file : currentProject.getSrc()) {
@@ -199,20 +203,22 @@ public class BlueJApp extends Application {
 			}
 		});
 	}
-	
+
 	private void saveSourceFileHandler(int x, int y, int button) {
 		String name = lstFiles.getSelectedItem();
 		SourceFile source = currentProject.getSourceFile(name);
 		if (source != null)
-			source.setSource(txtCodeEditor.getText(), () -> {});
+			source.setSource(txtCodeEditor.getText(), () -> {
+			});
 	}
-	
+
 	////////////////// Files listener //////////////////
 
 	private void fileSelectedHandler(String item, int index, int mouseButton) {
 		SourceFile file = currentProject.getSourceFile(item);
 		toggleFileButtons(true);
 		txtCodeEditor.setText(file.getSource());
+		currentSourceFile = item;
 	}
 
 	////////////////// other utils //////////////////
@@ -224,7 +230,8 @@ public class BlueJApp extends Application {
 		btnRun.setEnabled(b);
 		btnStop.setEnabled(b);
 		btnSettings.setEnabled(b);
-		lstFiles.setItems(new ArrayList<>());
+		if (!b)
+			lstFiles.setItems(new ArrayList<>());
 		toggleFileButtons(false);
 	}
 
@@ -239,12 +246,11 @@ public class BlueJApp extends Application {
 	private void loadProject(Folder f, Runnable runnable) {
 		Project.loadProject(f, (proj) -> {
 			this.currentProject = proj;
-			lstFiles.setItems(new ArrayList<>());
-			System.out.println(proj.getSrc());
+			ArrayList<String> list = new ArrayList<>();
 			for (SourceFile file : proj.getSrc()) {
-				lstFiles.addItem(file.getFile().getName());
+				list.add(file.getFile().getName());
 			}
-			System.out.println(lstFiles.getItems());
+			lstFiles.setItems(list);
 			toggleProjectButtons(true);
 			runnable.run();
 		});
