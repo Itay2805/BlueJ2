@@ -239,9 +239,12 @@ public class BlueJApp extends Application {
 	private void loadProject(Folder f, Runnable runnable) {
 		Project.loadProject(f, (proj) -> {
 			this.currentProject = proj;
+			lstFiles.setItems(new ArrayList<>());
+			System.out.println(proj.getSrc());
 			for (SourceFile file : proj.getSrc()) {
 				lstFiles.addItem(file.getFile().getName());
 			}
+			System.out.println(lstFiles.getItems());
 			toggleProjectButtons(true);
 			runnable.run();
 		});

@@ -29,8 +29,13 @@ public class Project {
 	public void sync() {
 		src.clear();
 		Folder srcFolder = projectRoot.getFolder("src");
-		for (File srcf : srcFolder
-				.search((f) -> MIME_SRC_FILE.equalsIgnoreCase(f.getData().getString("content_type")))) {
+		List<File> files = srcFolder.search((f) -> {
+			String contentType = f.getData().getString("content_type");
+			boolean test = MIME_SRC_FILE.equalsIgnoreCase(contentType);
+//			System.out.println("[DEBUG] " + MIME_SRC_FILE + " == " + contentType + " > " + test);
+			return test;
+		});
+		for (File srcf : files) {
 			src.add(new SourceFile(srcf));
 		}
 	}
@@ -53,12 +58,15 @@ public class Project {
 	}
 	
 	public void createSourceFile(String name, Runnable runnable) {
-		Application app = null;
-		File f = new File(name, app, new NBTTagCompound());
-		projectRoot.add(f, (a, b) -> {
-			SourceFile srcF = new SourceFile(f);
-			src.add(srcF);
-			srcF.prepare(runnable);
+		File f = new File(name, BlueJApp.id, new NBTTagCompound());
+		projectRoot.getFolder("src").add(f, (resp, ok) -> {
+			if(ok) {
+				SourceFile srcF = new SourceFile(f);
+				src.add(srcF);
+				srcF.prepare(runnable);				
+			}else {				
+				System.err.println("[ERROR] could not create source file: " + resp.getMessage());
+			}
 		});
 	}
 	
@@ -93,7 +101,12 @@ public class Project {
 	private static void createFolder(Folder parent, String name, Runnable runnable) {
 		if (!parent.hasFolder(name)) {
 			parent.add(new Folder(name), (resp, ok) -> {
-				runnable.run();
+				if(ok) {
+					runnable.run();
+				}else {
+					// @Todo do proper error handling
+					System.err.println("[ERROR] could not create folder: " + resp.getMessage());
+				}
 			});
 		} else {
 			runnable.run();
