@@ -10,7 +10,12 @@ import me.itay.bluej.project.Project;
 import net.minecraft.util.text.TextFormatting;
 
 public class JavaScriptRuntime implements BlueJLanguage {
-
+	
+	@Override
+	public String[] getExtensions() {
+		return new String[] { "js" };
+	}
+	
 	@Override
 	public String getName() {
 		return null;
@@ -18,7 +23,12 @@ public class JavaScriptRuntime implements BlueJLanguage {
 
 	@Override
 	public BlueJRunResponse run(Project project) {
-		return null;
+		Thread thread = new Thread(() -> {
+			// @Todo run the code 
+		});
+		thread.start();
+		BlueJRunResponse resp = new BlueJRunResponse();
+		return resp;
 	}
 	
 	@Override

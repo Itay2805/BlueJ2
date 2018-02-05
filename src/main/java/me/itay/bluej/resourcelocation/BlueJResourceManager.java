@@ -3,7 +3,6 @@ package me.itay.bluej.resourcelocation;
 import java.util.HashMap;
 
 import me.itay.bluej.resourcelocation.builtin.file.BlueJFileSystemResolver;
-import me.itay.bluej.resourcelocation.builtin.project.ProjectSourceResolver;
 
 public class BlueJResourceManager {
 	
@@ -11,7 +10,6 @@ public class BlueJResourceManager {
 	
 	static {
 		registerResolver("file", new BlueJFileSystemResolver());
-		registerResolver("bluej_prj_src", new ProjectSourceResolver());
 	}
 	
 	public static void registerResolver(String domain, BlueJResolver resolver) {

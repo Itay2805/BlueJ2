@@ -17,9 +17,9 @@ public class BlueJRunResponse {
 	private PipedInputStream in = new PipedInputStream();
 	
 	private int returnCode;
+	private boolean finished = false;
 	
-	public BlueJRunResponse(int returnCode) {
-		this.returnCode = returnCode;
+	public BlueJRunResponse() {
 		try {
 			stdout = new PipedInputStream(out);
 			stderr = new PipedInputStream(err);
@@ -27,6 +27,18 @@ public class BlueJRunResponse {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void setFinished(boolean finished) {
+		this.finished = finished;
+	}
+	
+	public boolean isFinished() {
+		return finished;
+	}
+	
+	public void setReturnCode(int returnCode) {
+		this.returnCode = returnCode;
 	}
 	
 	public int getReturnCode() {

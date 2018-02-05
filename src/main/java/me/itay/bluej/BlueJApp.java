@@ -2,6 +2,8 @@ package me.itay.bluej;
 
 import java.util.ArrayList;
 
+import org.apache.commons.io.FilenameUtils;
+
 import com.mrcrayfish.device.api.app.Application;
 import com.mrcrayfish.device.api.app.Dialog.Input;
 import com.mrcrayfish.device.api.app.Icons;
@@ -11,6 +13,8 @@ import com.mrcrayfish.device.api.app.component.TextArea;
 import com.mrcrayfish.device.api.io.Folder;
 
 import me.itay.bluej.dialogs.SelectFolder;
+import me.itay.bluej.languages.BlueJLanguage;
+import me.itay.bluej.languages.BlueJRuntimeManager;
 import me.itay.bluej.languages.js.JavaScriptRuntime;
 import me.itay.bluej.project.Project;
 import me.itay.bluej.project.SourceFile;
@@ -219,6 +223,13 @@ public class BlueJApp extends Application {
 		toggleFileButtons(true);
 		txtCodeEditor.setText(file.getSource());
 		currentSourceFile = item;
+		String ext = FilenameUtils.getExtension(item);
+		if(ext != null) {
+			BlueJLanguage lang = BlueJRuntimeManager.getLanguageByExtension(ext);
+			if(lang != null) {
+				txtCodeEditor.setHighlight(lang);
+			}
+		}
 	}
 
 	////////////////// other utils //////////////////
