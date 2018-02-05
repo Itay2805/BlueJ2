@@ -2,13 +2,13 @@ package me.itay.bluej.project;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
+import com.mrcrayfish.device.api.app.Application;
 import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.api.io.Folder;
 
 import me.itay.bluej.BlueJApp;
-import me.itay.bluej.resourcelocation.BlueJResolvedResource.BlueJAfter;
-import me.itay.bluej.resourcelocation.BlueJResolvedResource.BlueJResponse;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class Project {
@@ -52,7 +52,30 @@ public class Project {
 		return null;
 	}
 	
-	public static void createProject(Folder projectRoot, BlueJAfter after) {
+	public void createSourceFile(String name, Runnable runnable) {
+		Application app = null;
+		File f = new File(name, app, new NBTTagCompound());
+		projectRoot.add(f, (a, b) -> {
+			SourceFile srcF = new SourceFile(f);
+			src.add(srcF);
+			srcF.prepare(runnable);
+		});
+	}
+	
+	public void deleteSourceFile(String name, Runnable runnable) {
+		SourceFile srcF = getSourceFile(name);
+		src.remove(srcF);
+		srcF.getFile().delete((resp, ok) -> {
+			if(ok) {
+				runnable.run();
+			}else {
+				// @Todo proper error handling
+				System.err.println("[ERROR] Could not remove source file: " + resp.getMessage());
+			}
+		});
+	}
+	
+	public static void createProject(Folder projectRoot, Runnable runnable) {
 		NBTTagCompound compound = new NBTTagCompound();
 		compound.setString("content_type", MIME_PROJECT);
 
@@ -60,31 +83,31 @@ public class Project {
 			createFolder(projectRoot, "res", () -> {
 				createFolder(projectRoot, "build", () -> {
 					projectRoot.add(new File(".bjproj", BlueJApp.id, compound), (r3, o3) -> {
-						after.handle();
+						runnable.run();
 					});
 				});
 			});
 		});
 	}
 
-	private static void createFolder(Folder parent, String name, BlueJAfter after) {
+	private static void createFolder(Folder parent, String name, Runnable runnable) {
 		if (!parent.hasFolder(name)) {
 			parent.add(new Folder(name), (resp, ok) -> {
-				after.handle();
+				runnable.run();
 			});
 		} else {
-			after.handle();
+			runnable.run();
 		}
 	}
 
-	public static void loadProject(Folder projectFolder, BlueJResponse<Project> after) {
+	public static void loadProject(Folder projectFolder, Consumer<Project> consumer) {
 		if (!projectFolder.hasFile(".bjproj")) {
 			if (projectFolder.getParent().hasFile(".bjproj")) {
 				projectFolder = projectFolder.getParent();
 			} else {
 				// @Todo return proper errors
-				System.err.println("no file .bjproj");
-				after.handle(null);
+				System.err.println("[ERROR] no file .bjproj");
+				consumer.accept(null);
 			}
 		}
 
@@ -93,8 +116,8 @@ public class Project {
 		NBTTagCompound compound = projectFile.getData();
 		if (!MIME_PROJECT.equalsIgnoreCase(compound.getString("content_type"))) {
 			// @Todo return proper errors
-			System.err.println("invalid content type");
-			after.handle(null);
+			System.err.println("[ERROR] invalid content type");
+			consumer.accept(null);
 		}
 
 		Folder projectRoot = projectFile.getParent();
@@ -102,7 +125,7 @@ public class Project {
 			createFolder(projectRoot, "res", () -> {
 				createFolder(projectRoot, "build", () -> {
 					Project project = new Project(projectRoot);
-					after.handle(project);
+					consumer.accept(project);
 				});
 			});
 		});

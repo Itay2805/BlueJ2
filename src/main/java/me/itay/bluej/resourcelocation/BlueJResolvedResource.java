@@ -2,6 +2,7 @@ package me.itay.bluej.resourcelocation;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.api.io.Folder;
@@ -10,21 +11,13 @@ import net.minecraft.nbt.NBTTagCompound;
 
 public interface BlueJResolvedResource {
 	
-	public interface BlueJResponse<T> {
-		public void handle(T result);
-	}
+	public void setOpenAppID(String appid, Runnable runnable);
 	
-	public interface BlueJAfter {
-		public void handle();
-	}
-	
-	public void setOpenAppID(String appid, BlueJAfter after);
-	
-	public void mkdirs(BlueJAfter after);
-	public void create(BlueJAfter after);
-	public void delete(BlueJAfter after);
-	public void read(BlueJResponse<NBTTagCompound> response);
-	public void write(NBTTagCompound compound, BlueJAfter after);
+	public void mkdirs(Runnable runnable);
+	public void create(Runnable runnable);
+	public void delete(Runnable runnable);
+	public void read(Consumer<NBTTagCompound> consumer);
+	public void write(NBTTagCompound compound, Runnable runnable);
 	
 	public default void mkdirsSync() {
 		final AtomicBoolean bool = new AtomicBoolean(false);

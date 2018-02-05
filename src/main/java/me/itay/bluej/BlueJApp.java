@@ -3,20 +3,17 @@ package me.itay.bluej;
 import java.util.ArrayList;
 
 import com.mrcrayfish.device.api.app.Application;
-import com.mrcrayfish.device.api.app.Dialog.OpenFile;
-import com.mrcrayfish.device.api.app.Dialog.SaveFile;
+import com.mrcrayfish.device.api.app.Dialog.Input;
 import com.mrcrayfish.device.api.app.Icons;
 import com.mrcrayfish.device.api.app.component.Button;
 import com.mrcrayfish.device.api.app.component.ItemList;
 import com.mrcrayfish.device.api.app.component.TextArea;
 import com.mrcrayfish.device.api.io.Folder;
 
-import me.itay.bluej.dialogs.CreateSourceFile;
 import me.itay.bluej.dialogs.SelectFolder;
 import me.itay.bluej.languages.js.JavaScriptRuntime;
 import me.itay.bluej.project.Project;
 import me.itay.bluej.project.SourceFile;
-import me.itay.bluej.resourcelocation.BlueJResolvedResource.BlueJAfter;
 import net.minecraft.nbt.NBTTagCompound;
 
 public class BlueJApp extends Application {
@@ -178,12 +175,14 @@ public class BlueJApp extends Application {
 	////////////////// Project Sources Buttons //////////////////
 
 	private void createSourceFileHandler(int x, int y, int button) {
-		CreateSourceFile file = new CreateSourceFile();
+		Input file = new Input("File name");
 		file.setResponseHandler((ok, f) -> {
 			if (ok) {
-				SourceFile sourceFile = new SourceFile(f);
-				// @Cleanup move to the constructor (the data of the source file)
-				sourceFile.prepare(() -> {
+				currentProject.createSourceFile(f, () -> {
+					lstFiles.setItems(new ArrayList<>());
+					for (SourceFile srcF : currentProject.getSrc()) {
+						lstFiles.addItem(srcF.getFile().getName());
+					}
 				});
 			}
 			return true;
@@ -193,9 +192,12 @@ public class BlueJApp extends Application {
 
 	private void deleteSourceFileHandler(int x, int y, int button) {
 		String name = lstFiles.getSelectedItem();
-		SourceFile remove = currentProject.getSourceFile(name);
-		if (remove != null)
-			remove.getFile().delete();
+		currentProject.deleteSourceFile(name, () -> {
+			lstFiles.setItems(new ArrayList<>());
+			for (SourceFile file : currentProject.getSrc()) {
+				lstFiles.addItem(file.getFile().getName());
+			}
+		});
 	}
 	
 	private void saveSourceFileHandler(int x, int y, int button) {
@@ -234,23 +236,23 @@ public class BlueJApp extends Application {
 		btnCopyAll.setEnabled(b);
 	}
 
-	private void loadProject(Folder f, BlueJAfter after) {
+	private void loadProject(Folder f, Runnable runnable) {
 		Project.loadProject(f, (proj) -> {
 			this.currentProject = proj;
 			for (SourceFile file : proj.getSrc()) {
 				lstFiles.addItem(file.getFile().getName());
 			}
 			toggleProjectButtons(true);
-			after.handle();
+			runnable.run();
 		});
 	}
 
-	private void unloadProject(BlueJAfter after) {
+	private void unloadProject(Runnable runnable) {
 		// do saving and such
 
 		currentProject = null;
 		toggleProjectButtons(false);
-		after.handle();
+		runnable.run();
 	}
 
 	private void loadSourceFile(String name) {

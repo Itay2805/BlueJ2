@@ -2,7 +2,6 @@ package me.itay.bluej.project;
 
 import com.mrcrayfish.device.api.io.File;
 
-import me.itay.bluej.resourcelocation.BlueJResolvedResource.BlueJAfter;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.common.util.Constants.NBT;
 
@@ -14,10 +13,17 @@ public class SourceFile {
 		this.file = f;
 	}
 	
-	public void prepare(BlueJAfter after) {
+	public void prepare(Runnable runnable) {
 		NBTTagCompound data = file.getData();
 		data.setString("content_type", Project.MIME_SRC_FILE);
-		file.setData(data, (t, ok) -> after.handle());
+		file.setData(data, (resp, ok) -> {
+			if(ok) {
+				runnable.run();	
+			}else {
+				// @Todo proper error handling
+				System.err.println("[ERROR] error preparing source file: " + resp.getMessage());
+			}
+		});
 	}
 	
 	public File getFile() {
@@ -36,11 +42,16 @@ public class SourceFile {
 		return "";
 	}
 	
-	public void setSource(String source, BlueJAfter after) {
+	public void setSource(String source, Runnable runnable) {
 		NBTTagCompound data = file.getData();
 		data.setString("source", source);
-		file.setData(data, (t, ok) -> {
-			after.handle();
+		file.setData(data, (resp, ok) -> {
+			if(ok) {
+				runnable.run();	
+			}else {
+				// @Todo proper error handling
+				System.err.println("[ERROR] error setting source in source file: " + resp.getMessage());
+			}
 		});
 	}
 	
