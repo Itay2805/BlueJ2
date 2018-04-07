@@ -10,19 +10,26 @@ import com.mrcrayfish.device.api.io.Folder;
 
 import me.itay.bluej.BlueJApp;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.common.util.Constants.NBT;
 
 public class Project {
 
 	private Folder projectRoot;
 	private List<SourceFile> src = new ArrayList<>();
-
+	private SourceFile startupFile;
+	
 	public static final String MIME_BLUEJ = "bluej";
 	public static final String MIME_PROJECT = MIME_BLUEJ + "/project";
 	public static final String MIME_SRC_FILE = MIME_BLUEJ + "/source";
+	
+	public static final String FIELD_CONTENT_TYPE = "content_type";
+	public static final String FIELD_STARTUP = "startup";
 
+	public static final String FILE_BLUEJ_PROJECT = ".bjproj";
+	
 	public Project(Folder projectRoot) {
 		this.projectRoot = projectRoot;
-
+		
 		sync();
 	}
 
@@ -30,7 +37,7 @@ public class Project {
 		src.clear();
 		Folder srcFolder = projectRoot.getFolder("src");
 		List<File> files = srcFolder.search((f) -> {
-			String contentType = f.getData().getString("content_type");
+			String contentType = f.getData().getString(FIELD_CONTENT_TYPE);
 			boolean test = MIME_SRC_FILE.equalsIgnoreCase(contentType);
 //			System.out.println("[DEBUG] " + MIME_SRC_FILE + " == " + contentType + " > " + test);
 			return test;
@@ -38,6 +45,25 @@ public class Project {
 		for (File srcf : files) {
 			src.add(new SourceFile(srcf));
 		}
+	}
+	
+	public void setStartupFile(SourceFile startupFile) {
+		this.startupFile = startupFile;
+
+		File projectFile = projectRoot.getFile(FILE_BLUEJ_PROJECT);
+		NBTTagCompound compound = projectFile.getData();
+		
+		if(startupFile == null) {
+			compound.removeTag(FIELD_STARTUP);
+		}else {
+			compound.setString(FIELD_STARTUP, startupFile.getName());
+		}
+
+		projectFile.setData(compound);
+	}
+	
+	public SourceFile getStartupFile() {
+		return startupFile;
 	}
 
 	public Folder getProjectRoot() {
@@ -85,12 +111,12 @@ public class Project {
 	
 	public static void createProject(Folder projectRoot, Runnable runnable) {
 		NBTTagCompound compound = new NBTTagCompound();
-		compound.setString("content_type", MIME_PROJECT);
+		compound.setString(FIELD_CONTENT_TYPE, MIME_PROJECT);
 
 		createFolder(projectRoot, "src", () -> {
 			createFolder(projectRoot, "res", () -> {
 				createFolder(projectRoot, "build", () -> {
-					projectRoot.add(new File(".bjproj", BlueJApp.id, compound), (r3, o3) -> {
+					projectRoot.add(new File(FILE_BLUEJ_PROJECT, BlueJApp.id, compound), (r3, o3) -> {
 						runnable.run();
 					});
 				});
@@ -114,8 +140,8 @@ public class Project {
 	}
 
 	public static void loadProject(Folder projectFolder, Consumer<Project> consumer) {
-		if (!projectFolder.hasFile(".bjproj")) {
-			if (projectFolder.getParent().hasFile(".bjproj")) {
+		if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) {
+			if (projectFolder.getParent().hasFile(FILE_BLUEJ_PROJECT)) {
 				projectFolder = projectFolder.getParent();
 			} else {
 				// @Todo return proper errors
@@ -124,20 +150,24 @@ public class Project {
 			}
 		}
 
-		File projectFile = projectFolder.getFile(".bjproj");
+		File projectFile = projectFolder.getFile(FILE_BLUEJ_PROJECT);
 
 		NBTTagCompound compound = projectFile.getData();
-		if (!MIME_PROJECT.equalsIgnoreCase(compound.getString("content_type"))) {
+		if (!MIME_PROJECT.equalsIgnoreCase(compound.getString(FIELD_CONTENT_TYPE))) {
 			// @Todo return proper errors
 			System.err.println("[ERROR] invalid content type");
 			consumer.accept(null);
 		}
-
+		final String startupFile = compound.hasKey(FIELD_STARTUP, NBT.TAG_STRING) ? compound.getString(FIELD_STARTUP) : null;
 		Folder projectRoot = projectFile.getParent();
 		createFolder(projectRoot, "src", () -> {
 			createFolder(projectRoot, "res", () -> {
 				createFolder(projectRoot, "build", () -> {
 					Project project = new Project(projectRoot);
+					if(startupFile != null) {
+						SourceFile srcF = project.getSourceFile(startupFile);
+						project.setStartupFile(srcF);
+					}
 					consumer.accept(project);
 				});
 			});

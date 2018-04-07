@@ -1,6 +1,15 @@
 package me.itay.bluej.languages.js;
 
+import java.io.Reader;
+import java.io.Writer;
 import java.util.HashMap;
+import java.util.List;
+
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import com.mrcrayfish.device.api.app.interfaces.IHighlight;
 
@@ -25,6 +34,16 @@ public class JavaScriptRuntime implements BlueJLanguage {
 	public BlueJRunResponse run(Project project) {
 		Thread thread = new Thread(() -> {
 			// @Todo run the code 
+			ScriptEngineManager factory = new ScriptEngineManager();
+			ScriptEngine engine = factory.getEngineByName("Javascript");
+			try {
+				engine.eval("function require(name) {"
+						+ "native.loadModuleFromProject(name);"
+						+ "}");
+				engine.eval(project.getStartupFile().getSource());
+			} catch (ScriptException e) {
+				e.printStackTrace();
+			}
 		});
 		thread.start();
 		BlueJRunResponse resp = new BlueJRunResponse();
