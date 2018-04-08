@@ -2,9 +2,10 @@ package me.itay.bluej.dialogs;
 
 import com.mrcrayfish.device.api.app.Dialog;
 import com.mrcrayfish.device.api.app.component.Button;
-import com.mrcrayfish.device.api.app.component.CheckBox;
+import com.mrcrayfish.device.api.app.component.ComboBox;
 import com.mrcrayfish.device.api.app.component.Text;
 import com.mrcrayfish.device.api.app.component.TextField;
+import me.itay.bluej.languages.BlueJRuntimeManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 
@@ -12,8 +13,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 
-public class CreateSourceFile extends Dialog
-{
+public class SelectLanguageDialog extends Dialog{
     private static final int DIVIDE_WIDTH = 15;
 
     private String messageText = null;
@@ -23,14 +23,13 @@ public class CreateSourceFile extends Dialog
 
     private ResponseHandler<String> responseListener;
 
-    private TextField textFieldInput;
+    private ComboBox.List<String> langlist;
     private Button buttonPositive;
     private Button buttonNegative;
-    private CheckBox isStartupFile;
 
-    public CreateSourceFile() {}
+    public SelectLanguageDialog() {}
 
-    public CreateSourceFile(String messageText)
+    public SelectLanguageDialog(String messageText)
     {
         this.messageText = messageText;
     }
@@ -61,25 +60,25 @@ public class CreateSourceFile extends Dialog
             this.addComponent(message);
         }
 
-        textFieldInput = new TextField(5, 5 + offset, getWidth() - 10);
-        textFieldInput.setText(inputText);
-        textFieldInput.setFocused(true);
-        this.addComponent(textFieldInput);
-
-        isStartupFile = new CheckBox("Startup File", 75, 5);
-        this.addComponent(isStartupFile);
+        BlueJRuntimeManager.getRuntimes().keySet().forEach(System.out::println);
+        for (String s : BlueJRuntimeManager.getRuntimes().keySet().toArray(new String[]{})) {
+            System.out.println(s);
+        }
+        langlist = new ComboBox.List<>(5, 5, BlueJRuntimeManager.getRuntimes().keySet().toArray(new String[]{}));
+        langlist.setItems(BlueJRuntimeManager.getRuntimes().keySet().toArray(new String[]{}));
+        this.addComponent(langlist);
 
         int positiveWidth = Minecraft.getMinecraft().fontRenderer.getStringWidth(positiveText);
         buttonPositive = new Button(getWidth() - positiveWidth - DIVIDE_WIDTH, getHeight() - 20, positiveText);
         buttonPositive.setSize(positiveWidth + 10, 16);
         buttonPositive.setClickListener((mouseX, mouseY, mouseButton) ->
         {
-            if(!textFieldInput.getText().isEmpty())
+            if(!langlist.getSelectedItem().isEmpty())
             {
                 boolean close = true;
                 if(responseListener != null)
                 {
-                    close = responseListener.onResponse(true, textFieldInput.getText().trim());
+                    close = responseListener.onResponse(true, langlist.getSelectedItem().trim());
                 }
                 if(close) close();
             }
@@ -99,11 +98,10 @@ public class CreateSourceFile extends Dialog
      */
     public void setInputText(@Nonnull String inputText)
     {
+        if(inputText == null) {
+            throw new IllegalArgumentException("Text can't be null");
+        }
         this.inputText = inputText;
-    }
-
-    public CheckBox getIsStartupFile() {
-        return isStartupFile;
     }
 
     /**
@@ -111,9 +109,9 @@ public class CreateSourceFile extends Dialog
      * @return
      */
     @Nullable
-    public TextField getTextFieldInput()
+    public ComboBox.List<String> getTextFieldInput()
     {
-        return textFieldInput;
+        return langlist;
     }
 
     /**
@@ -122,6 +120,9 @@ public class CreateSourceFile extends Dialog
      */
     public void setPositiveText(@Nonnull String positiveText)
     {
+        if(positiveText == null) {
+            throw new IllegalArgumentException("Text can't be null");
+        }
         this.positiveText = positiveText;
     }
 
@@ -132,6 +133,9 @@ public class CreateSourceFile extends Dialog
      */
     public void setNegativeText(@Nonnull String negativeText)
     {
+        if(negativeText == null) {
+            throw new IllegalArgumentException("Text can't be null");
+        }
         this.negativeText = negativeText;
     }
 

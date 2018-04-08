@@ -8,10 +8,6 @@ public class BlueJRuntimeManager {
 	
 	private static HashMap<String, BlueJLanguage> runtimes = new HashMap<>();
 	
-	static {
-		registerLanguage(new JavaScriptRuntime());
-	}
-	
 	public static void registerLanguage(BlueJLanguage language) {
 		runtimes.put(language.getName(), language);
 	}

@@ -1,13 +1,20 @@
 package me.itay.bluej;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
+import com.mrcrayfish.device.api.ApplicationManager;
+import com.mrcrayfish.device.api.app.Dialog;
+import com.mrcrayfish.device.api.io.File;
+import com.mrcrayfish.device.core.Laptop;
+import me.itay.bluej.dialogs.CreateSourceFile;
+import me.itay.bluej.dialogs.SelectLanguageDialog;
+import me.itay.bluej.languages.BlueJRunResponse;
 import org.apache.commons.io.FilenameUtils;
 
 import com.mrcrayfish.device.api.app.Application;
-import com.mrcrayfish.device.api.app.Dialog;
 import com.mrcrayfish.device.api.app.Dialog.Input;
-import com.mrcrayfish.device.api.app.Dialog.Message;
 import com.mrcrayfish.device.api.app.Icons;
 import com.mrcrayfish.device.api.app.component.Button;
 import com.mrcrayfish.device.api.app.component.ItemList;
@@ -16,7 +23,6 @@ import com.mrcrayfish.device.api.io.Folder;
 
 import me.itay.bluej.dialogs.SelectFolder;
 import me.itay.bluej.languages.BlueJLanguage;
-import me.itay.bluej.languages.BlueJRunResponse;
 import me.itay.bluej.languages.BlueJRuntimeManager;
 import me.itay.bluej.languages.js.JavaScriptRuntime;
 import me.itay.bluej.project.Project;
@@ -117,7 +123,7 @@ public class BlueJApp extends Application {
 
 		btnRun = new Button(getNextBtnPos(), 1, Icons.PLAY);
 		btnRun.setToolTip("Run", "Run code");
-		btnRun.setClickListener(this::runHandler);
+        btnRun.setClickListener(this::runHandler);
 		btnStop = new Button(getNextBtnPos(), 1, Icons.STOP);
 		btnStop.setToolTip("Stop", "Stop running code");
 
@@ -137,7 +143,6 @@ public class BlueJApp extends Application {
 		lstFiles.setItemClickListener(this::fileSelectedHandler);
 
 		txtCodeEditor = new TextArea(1 + leftPanelWidth, 18, middlePanelWidth, HEIGHT - 23);
-		txtCodeEditor.setHighlight(new JavaScriptRuntime());
 
 		addComponent(lstFiles);
 		addComponent(txtCodeEditor);
@@ -155,12 +160,20 @@ public class BlueJApp extends Application {
 		SelectFolder file = new SelectFolder(this);
 		file.setResponseHandler((ok, f) -> {
 			if (ok) {
-				unloadProject(() -> {
-					Project.createProject(f, () -> {
-						loadProject(f, () -> {
-						});
-					});
-				});
+                SelectLanguageDialog dialog = new SelectLanguageDialog();
+                dialog.setResponseHandler((s, e)->{
+                    if(s){
+                        unloadProject(() -> {
+                            BlueJLanguage lang = BlueJRuntimeManager.getLanguage(e);
+                            Project.createProject(f, lang, () -> {
+                                loadProject(f, () -> {
+                                });
+                            });
+                        });
+                    }
+                    return true;
+                });
+                openDialog(dialog);
 			}
 			return true;
 		});
@@ -184,16 +197,19 @@ public class BlueJApp extends Application {
 	////////////////// Project Sources Buttons //////////////////
 
 	private void createSourceFileHandler(int x, int y, int button) {
-		Input file = new Input("File name");
+		CreateSourceFile file = new CreateSourceFile("File name");
 		file.setResponseHandler((ok, f) -> {
 			if (ok) {
-				currentProject.createSourceFile(f, () -> {
+				SourceFile createdFile = currentProject.createSourceFile(f, () -> {
 					lstFiles.setItems(new ArrayList<>());
 					for (SourceFile srcF : currentProject.getSrc()) {
 						lstFiles.addItem(srcF.getFile().getName());
 					}
-				});
-			}
+                });
+                if(file.getIsStartupFile().isSelected()) {
+                    currentProject.setStartupFile(createdFile);
+                }
+            }
 			return true;
 		});
 		openDialog(file);
@@ -201,7 +217,7 @@ public class BlueJApp extends Application {
 
 	private void deleteSourceFileHandler(int x, int y, int button) {
 		String name = lstFiles.getSelectedItem();
-		if(name.equals(currentSourceFile)) {
+		if(Objects.equals(name, currentSourceFile)) {
 			toggleFileButtons(false);
 		}
 		currentProject.deleteSourceFile(name, () -> {
@@ -216,7 +232,7 @@ public class BlueJApp extends Application {
 		String name = lstFiles.getSelectedItem();
 		SourceFile source = currentProject.getSourceFile(name);
 		if (source != null)
-			source.setSource(txtCodeEditor.getText().replace("\n\n", "\n"), () -> {
+			source.setSource(txtCodeEditor.getText(), () -> {
 			});
 	}
 
@@ -235,22 +251,25 @@ public class BlueJApp extends Application {
 			}
 		}
 	}
-	
-	////////////////// Run and Stop Buttons //////////////////
 
-	private void runHandler(int x, int y, int button) {
-		String ext = FilenameUtils.getExtension(currentSourceFile);
-		BlueJLanguage lang = BlueJRuntimeManager.getLanguageByExtension(ext);
-		if(lang == null) {
-			Message message = new Message("Unknown file type");
-			openDialog(message);
-			return;
-		}
-		
-		BlueJRunResponse resp = lang.run(currentProject);
-		// @Todo: open the console to see whats going on
-	}
-	
+    private void runHandler(int x, int y, int button) {
+        if(currentProject.getProjectLanguage() == null) {
+            Dialog.Message message = new Dialog.Message("Unknown file type");
+            openDialog(message);
+            return;
+        }
+
+        BlueJRunResponse resp = currentProject.getProjectLanguage().run(currentProject);
+        // @Todo: open the console to see whats going on
+        BlueJConsoleDialog console = new BlueJConsoleDialog();
+        try {
+            console.getStdout().write(resp.getIn().read());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.openDialog(console);
+    }
+
 	////////////////// other utils //////////////////
 
 	private void toggleProjectButtons(boolean b) {
@@ -276,15 +295,11 @@ public class BlueJApp extends Application {
 	private void loadProject(Folder f, Runnable runnable) {
 		Project.loadProject(f, (proj) -> {
 			this.currentProject = proj;
-			if(proj == null) {
-				Dialog.Message message = new Dialog.Message("Folder does not contain a project");
-				openDialog(message);
-				return;
-			}
 			ArrayList<String> list = new ArrayList<>();
 			for (SourceFile file : proj.getSrc()) {
 				list.add(file.getFile().getName());
 			}
+			this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
 			lstFiles.setItems(list);
 			toggleProjectButtons(true);
 			runnable.run();

@@ -1,17 +1,6 @@
 package me.itay.bluej.languages.js;
 
-import java.io.Reader;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.List;
-
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
-import com.mrcrayfish.device.api.app.interfaces.IHighlight;
+import javax.script.*;
 
 import me.itay.bluej.languages.BlueJLanguage;
 import me.itay.bluej.languages.BlueJRunResponse;
@@ -19,37 +8,43 @@ import me.itay.bluej.project.Project;
 import net.minecraft.util.text.TextFormatting;
 
 public class JavaScriptRuntime implements BlueJLanguage {
-	
+
 	@Override
 	public String[] getExtensions() {
 		return new String[] { "js" };
 	}
-	
+
 	@Override
 	public String getName() {
-		return null;
+		return "javascript";
 	}
 
 	@Override
 	public BlueJRunResponse run(Project project) {
 		Thread thread = new Thread(() -> {
-			// @Todo run the code 
+			// @Todo run the code
 			ScriptEngineManager factory = new ScriptEngineManager();
-			ScriptEngine engine = factory.getEngineByName("Javascript");
+			ScriptEngine engine = factory.getEngineByName("javascript");
 			try {
-				engine.eval("function require(name) {"
-						+ "native.loadModuleFromProject(name);"
-						+ "}");
-				engine.eval(project.getStartupFile().getSource());
-			} catch (ScriptException e) {
+//				engine.eval("function require(name) {"
+//						+ "native.loadModuleFromProject(name);"
+//						+ "}");
+                Compilable compilable = (Compilable)engine;
+                CompiledScript compiledScript = compilable.compile(project.getStartupFile().getSource());
+                System.out.println(compiledScript.eval());
+			} catch (ScriptException | NullPointerException e) {
 				e.printStackTrace();
 			}
 		});
 		thread.start();
-		BlueJRunResponse resp = new BlueJRunResponse();
-		return resp;
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return new BlueJRunResponse();
 	}
-	
+
 	@Override
 	public TextFormatting[] getKeywordFormatting(String text) {
 		switch(text) {
@@ -143,7 +138,7 @@ public class JavaScriptRuntime implements BlueJLanguage {
 						TextFormatting.DARK_RED
 					};
 		}
-		
+
 //		That looked horrible x-x
 //		if(text.matches("\\(|\\)|\\{|\\}|\\:|\\,")) {
 //			return new TextFormatting[] {
@@ -151,25 +146,25 @@ public class JavaScriptRuntime implements BlueJLanguage {
 //					TextFormatting.DARK_BLUE
 //				};
 //		}
-		
+
 		if(text.startsWith("\"")) {
 			return new TextFormatting[] {
 					TextFormatting.RESET,
 					TextFormatting.GRAY
-				};			
+				};
 		}
-		
+
 		if(text.matches("(0x|0b|0B|0X)?[0-9]+")) {
 			return new TextFormatting[] {
 					TextFormatting.RESET,
 					TextFormatting.GOLD
 				};
 		}
-		
+
 		return new TextFormatting[] {
 				TextFormatting.RESET,
 				TextFormatting.WHITE
 			};
 	}
-	
+
 }

@@ -90,14 +90,14 @@ public class CodeEditor extends TextArea {
 	public void render(Laptop laptop, Minecraft mc, int x, int y, int mouseX, int mouseY, boolean windowActive, float partialTicks) {
 		if (this.visible) {
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-			Gui.drawRect(x, y, x + width, y + height, borderColour);
-			Gui.drawRect(x + 1, y + 1, x + width - 1, y + height - 1, backgroundColour);
+			Gui.drawRect(x, y, x + width, y + height, this.borderColor);
+			Gui.drawRect(x + 1, y + 1, x + width - 1, y + height - 1, this.backgroundColor);
 
 			if (!isFocused && placeholder != null
 					&& (lines.isEmpty() || (lines.size() == 1 && lines.get(0).isEmpty()))) {
 				GlStateManager.enableBlend();
 				mc.fontRenderer.drawSplitString(placeholder, x + padding, y + padding, width - padding * 2 - 2,
-						placeholderColour);
+						placeholderColor);
 			}
 
 			GL11.glEnable(GL11.GL_SCISSOR_TEST);
@@ -125,7 +125,7 @@ public class CodeEditor extends TextArea {
 							y + padding + i * fontRenderer.FONT_HEIGHT, -1);
 				} else {
 					fontRenderer.drawString(lines.get(lineY), x + padding - scrollX,
-							y + padding + i * fontRenderer.FONT_HEIGHT, textColour);
+							y + padding + i * fontRenderer.FONT_HEIGHT, textColor);
 				}
 			}
 
@@ -163,7 +163,7 @@ public class CodeEditor extends TextArea {
 					int scrollBarY = (int) ((visibleScrollBarHeight - scrollBarHeight) * scrollPercentage);
 					int scrollY = yPosition + 2 + scrollBarY;
 					Gui.drawRect(x + width - 2 - scrollBarSize, scrollY, x + width - 2, scrollY + scrollBarHeight,
-							placeholderColour);
+							placeholderColor);
 				}
 
 				if (!wrapText && maxLineWidth >= width - padding * 2) {
@@ -176,7 +176,7 @@ public class CodeEditor extends TextArea {
 					int scrollX = xPosition + 2 + MathHelper.clamp(relativeScrollX + horizontalOffset, 0,
 							visibleScrollBarWidth - scrollBarWidth);
 					Gui.drawRect(scrollX, y + height - scrollBarSize - 2, scrollX + scrollBarWidth, y + height - 2,
-							placeholderColour);
+							placeholderColor);
 				}
 			}
 		}
@@ -545,7 +545,8 @@ public class CodeEditor extends TextArea {
 		}
 	}
 
-	private void moveCursorRight(int amount) {
+	@Override
+	public void moveCursorRight(int amount) {
 		if (amount <= 0)
 			return;
 
@@ -569,7 +570,8 @@ public class CodeEditor extends TextArea {
 		moveCursorRight(amount - 1);
 	}
 
-	private void moveCursorLeft(int amount) {
+	@Override
+	public void moveCursorLeft(int amount) {
 		if (amount <= 0)
 			return;
 
@@ -897,7 +899,7 @@ public class CodeEditor extends TextArea {
 	 *            the text colour
 	 */
 	public void setTextColour(Color color) {
-		this.textColour = color.getRGB();
+		this.textColor = color.getRGB();
 	}
 
 	/**
@@ -907,7 +909,7 @@ public class CodeEditor extends TextArea {
 	 *            the background colour
 	 */
 	public void setBackgroundColour(Color color) {
-		this.backgroundColour = color.getRGB();
+		this.backgroundColor = color.getRGB();
 	}
 
 	/**
@@ -917,7 +919,7 @@ public class CodeEditor extends TextArea {
 	 *            the border colour
 	 */
 	public void setBorderColour(Color color) {
-		this.borderColour = color.getRGB();
+		this.borderColor = color.getRGB();
 	}
 
 	/**

@@ -9,6 +9,7 @@ import com.mrcrayfish.device.api.app.Dialog;
 import com.mrcrayfish.device.api.app.Layout;
 import com.mrcrayfish.device.api.app.component.Button;
 import com.mrcrayfish.device.api.app.component.TextField;
+import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.api.io.Folder;
 import com.mrcrayfish.device.core.io.FileSystem;
 import com.mrcrayfish.device.programs.system.component.FileBrowser;
@@ -47,7 +48,7 @@ public class SelectFolder extends Dialog {
 		main = new Layout(211, 145);
 		
 		browser = new FileBrowser(0, 0, app, FileBrowser.Mode.BASIC);
-		browser.setFilter(file -> file.isFolder());
+		browser.setFilter(File::isFolder);
 		browser.openFolder(path);
 		main.addComponent(browser);
 		
@@ -81,16 +82,10 @@ public class SelectFolder extends Dialog {
 	}
 	
 	public void setPositiveText(@Nonnull String positiveText) {
-		if(positiveText == null) {
-			throw new IllegalArgumentException("Text can't be null");
-		}
 		this.positiveText = positiveText;
 	}
 	
 	public void setNegativeText(@Nonnull String negativeText) {
-		if(negativeText == null) {
-			throw new IllegalArgumentException("Text can't be null");
-		}
 		this.negativeText = negativeText;
 	}
 	
