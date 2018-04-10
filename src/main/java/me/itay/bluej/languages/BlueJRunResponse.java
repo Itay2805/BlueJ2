@@ -8,25 +8,34 @@ import java.io.PipedOutputStream;
 
 public class BlueJRunResponse {
 	
-	private PipedInputStream stdout;
+	/*private PipedInputStream stdout;
 	private PipedInputStream stderr;
 	private PipedOutputStream stdin;
 	
 	private PipedOutputStream out = new PipedOutputStream();
 	private PipedOutputStream err = new PipedOutputStream();
-	private PipedInputStream in = new PipedInputStream();
+	private PipedInputStream in = new PipedInputStream();*/
 	
 	private int returnCode;
 	private boolean finished = false;
+	private String output;
 	
 	public BlueJRunResponse() {
-		try {
+		/*try {
 			stdout = new PipedInputStream(out);
 			stderr = new PipedInputStream(err);
 			stdin = new PipedOutputStream(in);
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}*/
+	}
+
+	public String getOutput(){
+		return this.output;
+	}
+
+	public void setOutput(String output){
+		this.output = output;
 	}
 	
 	public void setFinished(boolean finished) {
@@ -45,7 +54,7 @@ public class BlueJRunResponse {
 		return returnCode;
 	}
 	
-	public PipedOutputStream getErr() {
+	/*public PipedOutputStream getErr() {
 		return err;
 	}
 	
@@ -67,6 +76,6 @@ public class BlueJRunResponse {
 	
 	public InputStream getStderr() {
 		return stderr;
-	}
+	}*/
 	
 }

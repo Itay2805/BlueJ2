@@ -2,15 +2,18 @@ package me.itay.bluej;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import com.mrcrayfish.device.api.ApplicationManager;
+import com.mrcrayfish.device.api.app.Component;
 import com.mrcrayfish.device.api.app.Dialog;
 import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.core.Laptop;
 import me.itay.bluej.dialogs.CreateSourceFile;
 import me.itay.bluej.dialogs.SelectLanguageDialog;
 import me.itay.bluej.languages.BlueJRunResponse;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.commons.io.FilenameUtils;
 
 import com.mrcrayfish.device.api.app.Application;
@@ -51,6 +54,8 @@ public class BlueJApp extends Application {
 	// private int rightPanelWidth;
 
 	private int x;
+
+	private List<Component> enabledComponents = new ArrayList<>();
 
 	private void resetLayout() {
 		x = 1;
@@ -103,7 +108,7 @@ public class BlueJApp extends Application {
 		btnDeleteFile.setClickListener(this::deleteSourceFileHandler);
 		btnSaveFile = new Button(getNextBtnPos(), 1, Icons.SAVE);
 		btnSaveFile.setToolTip("Save File", "Save current file");
-		btnSaveFile.setClickListener(this::saveSourceFileHandler);
+		btnSaveFile.setClickListener((x, y, b)->this.saveSourceFile());
 
 		addComponent(btnNewFile);
 		addComponent(btnDeleteFile);
@@ -143,6 +148,10 @@ public class BlueJApp extends Application {
 		lstFiles.setItemClickListener(this::fileSelectedHandler);
 
 		txtCodeEditor = new TextArea(1 + leftPanelWidth, 18, middlePanelWidth, HEIGHT - 23);
+		txtCodeEditor.setKeyListener((c)->{
+		    this.btnSaveFile.setEnabled(true);
+		    return true;
+        });
 
 		addComponent(lstFiles);
 		addComponent(txtCodeEditor);
@@ -228,13 +237,15 @@ public class BlueJApp extends Application {
 		});
 	}
 
-	private void saveSourceFileHandler(int x, int y, int button) {
-		String name = lstFiles.getSelectedItem();
-		SourceFile source = currentProject.getSourceFile(name);
-		if (source != null)
-			source.setSource(txtCodeEditor.getText(), () -> {
-			});
-	}
+	private void saveSourceFile(){
+        String name = lstFiles.getSelectedItem();
+        SourceFile source = currentProject.getSourceFile(name);
+        if (source != null)
+            source.setSource(txtCodeEditor.getText(), () -> {
+            });
+        this.btnSaveFile.setEnabled(false);
+        this.enabledComponents.remove(this.btnSaveFile);
+    }
 
 	////////////////// Files listener //////////////////
 
@@ -254,20 +265,16 @@ public class BlueJApp extends Application {
 
     private void runHandler(int x, int y, int button) {
         if(currentProject.getProjectLanguage() == null) {
-            Dialog.Message message = new Dialog.Message("Unknown file type");
-            openDialog(message);
+            openDialog(new Dialog.Message("Unknown file type"));
             return;
         }
 
+        this.saveSourceFile();
+
         BlueJRunResponse resp = currentProject.getProjectLanguage().run(currentProject);
         // @Todo: open the console to see whats going on
-        BlueJConsoleDialog console = new BlueJConsoleDialog();
-        try {
-            console.getStdout().write(resp.getIn().read());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        this.openDialog(console);
+		Dialog.Message message = new Dialog.Message(resp.getOutput());
+        this.openDialog(message);
     }
 
 	////////////////// other utils //////////////////
@@ -279,8 +286,13 @@ public class BlueJApp extends Application {
 		btnRun.setEnabled(b);
 		btnStop.setEnabled(b);
 		btnSettings.setEnabled(b);
-		if (!b)
-			lstFiles.setItems(new ArrayList<>());
+		if (!b){
+            lstFiles.setItems(new ArrayList<>());
+            this.enabledComponents.remove(btnExportProject);
+            this.enabledComponents.remove(btnNewFile);
+            this.enabledComponents.remove(btnStop);
+            this.enabledComponents.remove(btnSettings);
+        }
 		toggleFileButtons(false);
 	}
 
@@ -290,17 +302,26 @@ public class BlueJApp extends Application {
 		btnSaveFile.setEnabled(b);
 		btnPaste.setEnabled(b);
 		btnCopyAll.setEnabled(b);
+		if(!b){
+		    this.enabledComponents.clear();
+		    this.enabledComponents.remove(btnDeleteFile);
+		    this.enabledComponents.remove(btnSaveFile);
+		    this.enabledComponents.remove(btnPaste);
+		    this.enabledComponents.remove(btnCopyAll);
+        }
 	}
 
 	private void loadProject(Folder f, Runnable runnable) {
 		Project.loadProject(f, (proj) -> {
 			this.currentProject = proj;
-			ArrayList<String> list = new ArrayList<>();
-			for (SourceFile file : proj.getSrc()) {
-				list.add(file.getFile().getName());
-			}
-			this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
-			lstFiles.setItems(list);
+			if(!proj.getSrc().isEmpty()){
+                ArrayList<String> list = new ArrayList<>();
+                for (SourceFile file : proj.getSrc()) {
+                    list.add(file.getFile().getName());
+                }
+                lstFiles.setItems(list);
+            }
+            this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
 			toggleProjectButtons(true);
 			runnable.run();
 		});

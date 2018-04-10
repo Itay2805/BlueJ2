@@ -4,8 +4,13 @@ import javax.script.*;
 
 import me.itay.bluej.languages.BlueJLanguage;
 import me.itay.bluej.languages.BlueJRunResponse;
+import me.itay.bluej.languages.BlueJRuntimeManager;
 import me.itay.bluej.project.Project;
+import me.itay.bluej.resourcelocation.BlueJResourceLocation;
 import net.minecraft.util.text.TextFormatting;
+
+import java.io.IOException;
+import java.io.StringWriter;
 
 public class JavaScriptRuntime implements BlueJLanguage {
 
@@ -21,28 +26,28 @@ public class JavaScriptRuntime implements BlueJLanguage {
 
 	@Override
 	public BlueJRunResponse run(Project project) {
-		Thread thread = new Thread(() -> {
-			// @Todo run the code
-			ScriptEngineManager factory = new ScriptEngineManager();
-			ScriptEngine engine = factory.getEngineByName("javascript");
-			try {
+		BlueJRunResponse resp = new BlueJRunResponse();
+        ScriptEngineManager factory = new ScriptEngineManager();
+        ScriptEngine engine = factory.getEngineByName("javascript");
+        try {
 //				engine.eval("function require(name) {"
 //						+ "native.loadModuleFromProject(name);"
 //						+ "}");
-                Compilable compilable = (Compilable)engine;
-                CompiledScript compiledScript = compilable.compile(project.getStartupFile().getSource());
-                System.out.println(compiledScript.eval());
-			} catch (ScriptException | NullPointerException e) {
-				e.printStackTrace();
-			}
-		});
-		thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
+            Compilable compilable = (Compilable)engine;
+            String source = project.getStartupFile().getSource();
+            System.out.println(source);
+            CompiledScript compiledScript = compilable.compile(source);
+            StringWriter sw = new StringWriter();
+            ScriptContext context = engine.getContext();
+            context.setWriter(sw);
+            String ret = (String)compiledScript.eval();
+            resp.setOutput(sw.toString().replace("\n", ""));
+            System.out.println("Ret: " + ret);
+            System.out.println("Sw: " + sw.toString());
+        } catch (ScriptException | NullPointerException e) {
             e.printStackTrace();
         }
-        return new BlueJRunResponse();
+        return resp;
 	}
 
 	@Override
