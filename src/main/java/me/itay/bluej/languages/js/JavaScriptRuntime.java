@@ -34,14 +34,14 @@ public class JavaScriptRuntime implements BlueJLanguage {
 //						+ "native.loadModuleFromProject(name);"
 //						+ "}");
             Compilable compilable = (Compilable)engine;
-            String source = project.getStartupFile().getSource();
+            String source = project.getStartupFile().getSource().replace("\n\n", "\n");
             System.out.println(source);
             CompiledScript compiledScript = compilable.compile(source);
             StringWriter sw = new StringWriter();
             ScriptContext context = engine.getContext();
             context.setWriter(sw);
             String ret = (String)compiledScript.eval();
-            resp.setOutput(sw.toString().replace("\n", ""));
+            resp.setOutput(sw.toString());
             System.out.println("Ret: " + ret);
             System.out.println("Sw: " + sw.toString());
         } catch (ScriptException | NullPointerException e) {

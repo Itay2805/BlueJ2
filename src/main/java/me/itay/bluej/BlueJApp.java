@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import com.mrcrayfish.device.api.ApplicationManager;
 import com.mrcrayfish.device.api.app.Component;
@@ -31,6 +32,7 @@ import me.itay.bluej.languages.js.JavaScriptRuntime;
 import me.itay.bluej.project.Project;
 import me.itay.bluej.project.SourceFile;
 import net.minecraft.nbt.NBTTagCompound;
+import org.lwjgl.input.Keyboard;
 
 public class BlueJApp extends Application {
 
@@ -169,7 +171,7 @@ public class BlueJApp extends Application {
 		SelectFolder file = new SelectFolder(this);
 		file.setResponseHandler((ok, f) -> {
 			if (ok) {
-                SelectLanguageDialog dialog = new SelectLanguageDialog();
+                SelectLanguageDialog dialog = new SelectLanguageDialog("Select Language");
                 dialog.setResponseHandler((s, e)->{
                     if(s){
                         unloadProject(() -> {
@@ -235,6 +237,7 @@ public class BlueJApp extends Application {
 				lstFiles.addItem(file.getFile().getName());
 			}
 		});
+		this.txtCodeEditor.clear();
 	}
 
 	private void saveSourceFile(){
@@ -252,15 +255,8 @@ public class BlueJApp extends Application {
 	private void fileSelectedHandler(String item, int index, int mouseButton) {
 		SourceFile file = currentProject.getSourceFile(item);
 		toggleFileButtons(true);
-		txtCodeEditor.setText(file.getSource());
+		txtCodeEditor.setText(file.getSource().replace("\n\n", "\n"));
 		currentSourceFile = item;
-		String ext = FilenameUtils.getExtension(item);
-		if(ext != null) {
-			BlueJLanguage lang = BlueJRuntimeManager.getLanguageByExtension(ext);
-			if(lang != null) {
-				txtCodeEditor.setHighlight(lang);
-			}
-		}
 	}
 
     private void runHandler(int x, int y, int button) {
@@ -273,7 +269,8 @@ public class BlueJApp extends Application {
 
         BlueJRunResponse resp = currentProject.getProjectLanguage().run(currentProject);
         // @Todo: open the console to see whats going on
-		Dialog.Message message = new Dialog.Message(resp.getOutput());
+		BlueJConsoleDialog message = new BlueJConsoleDialog();
+		message.setOutput(resp.getOutput());
         this.openDialog(message);
     }
 
@@ -312,9 +309,15 @@ public class BlueJApp extends Application {
 	}
 
 	private void loadProject(Folder f, Runnable runnable) {
-		Project.loadProject(f, (proj) -> {
-			this.currentProject = proj;
-			if(!proj.getSrc().isEmpty()){
+		if(!Project.loadProject(f, loadProject(runnable))){
+		    this.openDialog(new Dialog.Message("Could not load project! Project does not exist!"));
+        }
+	}
+
+	private Consumer<Project> loadProject(Runnable runnable) {
+        return (proj) -> {
+            this.currentProject = proj;
+            if (!proj.getSrc().isEmpty()) {
                 ArrayList<String> list = new ArrayList<>();
                 for (SourceFile file : proj.getSrc()) {
                     list.add(file.getFile().getName());
@@ -322,10 +325,10 @@ public class BlueJApp extends Application {
                 lstFiles.setItems(list);
             }
             this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
-			toggleProjectButtons(true);
-			runnable.run();
-		});
-	}
+            toggleProjectButtons(true);
+            runnable.run();
+        };
+    }
 
 	private void unloadProject(Runnable runnable) {
 		// do saving and such

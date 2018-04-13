@@ -48,8 +48,6 @@ public class SelectLanguageDialog extends Dialog{
             offset += lines * 9 + 5;
         }
 
-        super.init();
-
         defaultLayout.setBackground((gui, mc, x, y, width, height, mouseX, mouseY, windowActive) -> {
             Gui.drawRect(x, y, x + width, y + height, Color.LIGHT_GRAY.getRGB());
         });
@@ -98,9 +96,6 @@ public class SelectLanguageDialog extends Dialog{
      */
     public void setInputText(@Nonnull String inputText)
     {
-        if(inputText == null) {
-            throw new IllegalArgumentException("Text can't be null");
-        }
         this.inputText = inputText;
     }
 
@@ -120,9 +115,6 @@ public class SelectLanguageDialog extends Dialog{
      */
     public void setPositiveText(@Nonnull String positiveText)
     {
-        if(positiveText == null) {
-            throw new IllegalArgumentException("Text can't be null");
-        }
         this.positiveText = positiveText;
     }
 
@@ -133,9 +125,6 @@ public class SelectLanguageDialog extends Dialog{
      */
     public void setNegativeText(@Nonnull String negativeText)
     {
-        if(negativeText == null) {
-            throw new IllegalArgumentException("Text can't be null");
-        }
         this.negativeText = negativeText;
     }
 

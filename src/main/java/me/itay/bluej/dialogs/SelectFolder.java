@@ -48,7 +48,7 @@ public class SelectFolder extends Dialog {
 		main = new Layout(211, 145);
 		
 		browser = new FileBrowser(0, 0, app, FileBrowser.Mode.BASIC);
-		browser.setFilter(File::isFolder);
+//		browser.setFilter(File::isFolder);
 		browser.openFolder(path);
 		main.addComponent(browser);
 		

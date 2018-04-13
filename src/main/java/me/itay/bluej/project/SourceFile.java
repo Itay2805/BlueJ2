@@ -15,7 +15,7 @@ public class SourceFile {
 		this.file = f;
 	}
 	
-	public void prepare(Runnable runnable) {
+	public NBTTagCompound prepare(Runnable runnable) {
 		NBTTagCompound data = file.getData();
 		Objects.requireNonNull(data).setString("content_type", Project.MIME_SRC_FILE);
 		file.setData(data, (resp, ok) -> {
@@ -26,6 +26,7 @@ public class SourceFile {
 				System.err.println("[ERROR] error preparing source file: " + Objects.requireNonNull(resp).getMessage());
 			}
 		});
+		return data;
 	}
 	
 	public File getFile() {

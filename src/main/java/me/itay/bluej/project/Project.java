@@ -30,8 +30,9 @@ public class Project {
 
 	public static final String FIELD_CONTENT_TYPE = "content_type";
 	public static final String FIELD_STARTUP = "startup";
+	public static final String FIELD_FILES_LIST = "files";
 
-	public static final String FILE_BLUEJ_PROJECT = ".bjproj";
+	public static final String FILE_BLUEJ_PROJECT = "bjproj";
 
 	public Project(Folder projectRoot, BlueJLanguage lang) {
 		this.projectRoot = projectRoot;
@@ -147,14 +148,16 @@ public class Project {
 		}
 	}
 
-	public static void loadProject(Folder projectFolder, Consumer<Project> consumer) {
-		if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) {
+	public static boolean loadProject(Folder projectFolder, Consumer<Project> consumer) {
+	    System.out.println("projectFolder: " + projectFolder.getName());
+	    System.out.println("Files in project folder: ");
+        projectFolder.getFiles().forEach((f)-> System.out.println("\t" + f.getName()));
+		if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) { //This is returning true regardless on if .bjproj exists
 			if (Objects.requireNonNull(projectFolder.getParent()).hasFile(FILE_BLUEJ_PROJECT)) {
 				projectFolder = projectFolder.getParent();
 			} else {
 				// @Todo return proper errors
-				System.err.println("[ERROR] no file .bjproj");
-				consumer.accept(null);
+				return false;
 			}
 		}
 
@@ -166,22 +169,20 @@ public class Project {
 			System.err.println("[ERROR] invalid content type");
 			consumer.accept(null);
 		}
-		final String langname = compound.getString(MIME_PROJ_LANG);
-		final String startupFile = compound.hasKey(FIELD_STARTUP, NBT.TAG_STRING) ? compound.getString(FIELD_STARTUP) : null;
-		Folder projectRoot = projectFile.getParent();
-		createFolder(Objects.requireNonNull(projectRoot), "src", () -> {
-			createFolder(projectRoot, "res", () -> {
-				createFolder(projectRoot, "build", () -> {
-					Project project = new Project(projectRoot, BlueJRuntimeManager.getLanguage(langname));
-					if(startupFile != null) {
-						SourceFile srcF = project.getSourceFile(startupFile);
-						project.setStartupFile(srcF);
-					}
-					consumer.accept(project);
-				});
-			});
-		});
-
+		System.out.println(compound.toString());
+		final String langname = compound.hasKey(MIME_PROJ_LANG) ? compound.getString(MIME_PROJ_LANG) : "";
+        final File startupFile = compound.hasKey(FIELD_STARTUP, NBT.TAG_STRING) ? File.fromTag(FIELD_STARTUP, compound) : null;
+        Folder projectRoot = projectFile.getParent();
+        if(langname.isEmpty()){
+            return false;
+        }
+        Project proj = new Project(projectRoot, BlueJRuntimeManager.getLanguage(langname));
+        if(startupFile != null){
+            System.out.println(startupFile.getData().toString());
+            proj.setStartupFile(new SourceFile(startupFile));
+        }
+        consumer.accept(proj);
+        return true;
 	}
 
     public BlueJLanguage getProjectLanguage() {
