@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import com.mrcrayfish.device.api.app.Application;
-import com.mrcrayfish.device.api.app.interfaces.IHighlight;
 import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.api.io.Folder;
 
@@ -14,6 +12,7 @@ import me.itay.bluej.BlueJApp;
 import me.itay.bluej.languages.BlueJLanguage;
 import me.itay.bluej.languages.BlueJRuntimeManager;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants.NBT;
 
 public class Project {
@@ -22,36 +21,51 @@ public class Project {
 	private List<SourceFile> src = new ArrayList<>();
 	private SourceFile startupFile;
 	private BlueJLanguage language;
+	private String name;
+	private File projectFile;
 
-	public static final String MIME_BLUEJ = "bluej";
-	public static final String MIME_PROJECT = MIME_BLUEJ + "/project";
-	public static final String MIME_SRC_FILE = MIME_BLUEJ + "/source";
-	public static final String MIME_PROJ_LANG = "lang";
-
-	public static final String FIELD_CONTENT_TYPE = "content_type";
+	public static final String FIELD_ROOT = "root";
+	public static final String FIELD_NAME = "name";
+    public static final String FIELD_LANG = "lang";
 	public static final String FIELD_STARTUP = "startup";
 	public static final String FIELD_FILES_LIST = "files";
+	public static final String FIELD_FILE = "field_";
 
 	public static final String FILE_BLUEJ_PROJECT = "bjproj";
 
-	public Project(Folder projectRoot, BlueJLanguage lang) {
+	public Project(Folder projectRoot, String name, BlueJLanguage lang) {
 		this.projectRoot = projectRoot;
         this.language = lang;
-		sync();
+        this.name = name;
+        this.projectFile = this.projectRoot.getFile(FILE_BLUEJ_PROJECT);
 	}
 
-	public void sync() {
-		src.clear();
-		Folder srcFolder = projectRoot.getFolder("src");
-		List<File> files = Objects.requireNonNull(srcFolder).search((f) -> {
-			String contentType = Objects.requireNonNull(f.getData()).getString(FIELD_CONTENT_TYPE);
-			@SuppressWarnings("UnnecessaryLocalVariable") boolean test = MIME_SRC_FILE.equalsIgnoreCase(contentType);
-//			System.out.println("[DEBUG] " + MIME_SRC_FILE + " == " + contentType + " > " + test);
-			return test;
-		});
-		for (File srcf : files) {
-			src.add(new SourceFile(srcf));
-		}
+	public void save() {
+	    NBTTagCompound projectdata = new NBTTagCompound();
+	    projectdata.setString(FIELD_ROOT, this.projectRoot.getName());
+	    projectdata.setString(FIELD_NAME, this.name);
+	    projectdata.setString(FIELD_LANG, this.language.getName());
+	    if(this.startupFile != null) {
+            NBTTagCompound startupnbt = this.startupFile.getData();
+            startupnbt.setString("name", this.startupFile.getName());
+            projectdata.setTag(FIELD_STARTUP, startupnbt);
+        }
+        if(!src.isEmpty()) {
+            NBTTagList files = new NBTTagList();
+            for (int i = 0; i < src.size(); i++) {
+                SourceFile f = src.get(i);
+                if(this.projectRoot.getFolder("src").hasFile(f.getName())){
+                    NBTTagCompound fd = new NBTTagCompound();
+                    fd.setString("name", f.getName());
+                    fd.setTag(FIELD_FILE + i, f.getData());
+                    files.appendTag(fd);
+                    continue;
+                }
+                src.remove(f);
+            }
+            projectdata.setTag(FIELD_FILES_LIST, files);
+        }
+        this.projectFile.setData(projectdata);
 	}
 
 	public void setStartupFile(SourceFile startupFile) {
@@ -90,13 +104,25 @@ public class Project {
 		return null;
 	}
 
+	public void addSourceFile(SourceFile sourcefile){
+        src.add(sourcefile);
+        save();
+    }
+
+    /**
+     * Use this for creating and adding a source file.
+     * If you already have a source file, use  {@link Project#addSourceFile(SourceFile)} instead.
+     * @param name name of the file
+     * @param runnable a runnable lambda function to be executed during the creation of the source file
+     * @return the source file
+     */
 	public SourceFile createSourceFile(String name, Runnable runnable) {
 		File f = new File(name, BlueJApp.id, new NBTTagCompound());
 		Objects.requireNonNull(projectRoot.getFolder("src")).add(f, (resp, ok) -> {
 			if(ok) {
-				SourceFile srcF = new SourceFile(f);
-				src.add(srcF);
-				srcF.prepare(runnable);
+				addSourceFile(new SourceFile(f));
+				if(runnable != null)
+				    runnable.run();
 			}else {
 				System.err.println("[ERROR] could not create source file: " + Objects.requireNonNull(resp).getMessage());
 			}
@@ -105,54 +131,24 @@ public class Project {
 	}
 
 	public void deleteSourceFile(String name, Runnable runnable) {
-		SourceFile srcF = getSourceFile(name);
-		src.remove(srcF);
-		srcF.getFile().delete((resp, ok) -> {
-			if(ok) {
-				runnable.run();
-			}else {
-				// @Todo proper error handling
-				System.err.println("[ERROR] Could not remove source file: " + Objects.requireNonNull(resp).getMessage());
-			}
-		});
-	}
+        SourceFile srcF = getSourceFile(name);
+        src.remove(srcF);
+        srcF.getFile().delete((resp, ok) -> {
+            if (ok) {
+                runnable.run();
+            } else {
+                // @Todo proper error handling
+                System.err.println("[ERROR] Could not remove source file: " + Objects.requireNonNull(resp).getMessage());
+            }
+        });
+    }
 
-	public static void createProject(Folder projectRoot, BlueJLanguage lang, Runnable runnable) {
-		NBTTagCompound compound = new NBTTagCompound();
-		compound.setString(FIELD_CONTENT_TYPE, MIME_PROJECT);
-		compound.setString(MIME_PROJ_LANG, lang.getName());
-
-		createFolder(projectRoot, "src", () -> {
-			createFolder(projectRoot, "res", () -> {
-				createFolder(projectRoot, "build", () -> {
-					projectRoot.add(new File(FILE_BLUEJ_PROJECT, BlueJApp.id, compound), (r3, o3) -> {
-						runnable.run();
-					});
-				});
-			});
-		});
-	}
-
-	private static void createFolder(Folder parent, String name, Runnable runnable) {
-		if (!parent.hasFolder(name)) {
-			parent.add(new Folder(name), (resp, ok) -> {
-				if(ok) {
-					runnable.run();
-				}else {
-					// @Todo do proper error handling
-					System.err.println("[ERROR] could not create folder: " + Objects.requireNonNull(resp).getMessage());
-				}
-			});
-		} else {
-			runnable.run();
-		}
-	}
-
-	public static boolean loadProject(Folder projectFolder, Consumer<Project> consumer) {
+	public boolean load(Consumer<Project> consumer) {
+	    Folder projectFolder = this.projectRoot;
 	    System.out.println("projectFolder: " + projectFolder.getName());
 	    System.out.println("Files in project folder: ");
         projectFolder.getFiles().forEach((f)-> System.out.println("\t" + f.getName()));
-		if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) { //This is returning true regardless on if .bjproj exists
+		if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) {
 			if (Objects.requireNonNull(projectFolder.getParent()).hasFile(FILE_BLUEJ_PROJECT)) {
 				projectFolder = projectFolder.getParent();
 			} else {
@@ -162,28 +158,13 @@ public class Project {
 		}
 
 		File projectFile = projectFolder.getFile(FILE_BLUEJ_PROJECT);
-
-		NBTTagCompound compound = Objects.requireNonNull(projectFile).getData();
-		if (!MIME_PROJECT.equalsIgnoreCase(Objects.requireNonNull(compound).getString(FIELD_CONTENT_TYPE))) {
-			// @Todo return proper errors
-			System.err.println("[ERROR] invalid content type");
-			consumer.accept(null);
-		}
-		System.out.println(compound.toString());
-		final String langname = compound.hasKey(MIME_PROJ_LANG) ? compound.getString(MIME_PROJ_LANG) : "";
-        final File startupFile = compound.hasKey(FIELD_STARTUP, NBT.TAG_STRING) ? File.fromTag(FIELD_STARTUP, compound) : null;
-        Folder projectRoot = projectFile.getParent();
-        if(langname.isEmpty()){
-            return false;
+		Project project = ProjectUtilsKt.loadFromProjectFile(projectFile);
+		if(project != null){
+		    consumer.accept(project);
+		    return true;
         }
-        Project proj = new Project(projectRoot, BlueJRuntimeManager.getLanguage(langname));
-        if(startupFile != null){
-            System.out.println(startupFile.getData().toString());
-            proj.setStartupFile(new SourceFile(startupFile));
-        }
-        consumer.accept(proj);
-        return true;
-	}
+        return false;
+    }
 
     public BlueJLanguage getProjectLanguage() {
         return this.language;

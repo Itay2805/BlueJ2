@@ -9,11 +9,13 @@ import java.util.function.Consumer;
 import com.mrcrayfish.device.api.ApplicationManager;
 import com.mrcrayfish.device.api.app.Component;
 import com.mrcrayfish.device.api.app.Dialog;
+import com.mrcrayfish.device.api.app.listener.ClickListener;
 import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.core.Laptop;
 import me.itay.bluej.dialogs.CreateSourceFile;
 import me.itay.bluej.dialogs.SelectLanguageDialog;
 import me.itay.bluej.languages.BlueJRunResponse;
+import me.itay.bluej.project.ProjectUtilsKt;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.commons.io.FilenameUtils;
 
@@ -171,15 +173,17 @@ public class BlueJApp extends Application {
 		SelectFolder file = new SelectFolder(this);
 		file.setResponseHandler((ok, f) -> {
 			if (ok) {
+			    System.out.println(f.getName());
                 SelectLanguageDialog dialog = new SelectLanguageDialog("Select Language");
                 dialog.setResponseHandler((s, e)->{
                     if(s){
                         unloadProject(() -> {
-                            BlueJLanguage lang = BlueJRuntimeManager.getLanguage(e);
-                            Project.createProject(f, lang, () -> {
-                                loadProject(f, () -> {
-                                });
-                            });
+                            if(f.isFolder()){
+                                File projectfile = ProjectUtilsKt.createProject(f, f.getName(), BlueJRuntimeManager.getLanguage(e), null);
+                                this.openProject(projectfile);
+                            }else{
+                                showError("Please select a root folder!", null);
+                            }
                         });
                     }
                     return true;
@@ -191,19 +195,50 @@ public class BlueJApp extends Application {
 		openDialog(file);
 	}
 
+	private boolean openProject(File f){
+        if(f.isFolder()){
+            Folder ff = (Folder)f;
+            if(ff.hasFile(Project.FILE_BLUEJ_PROJECT)){
+                File projfile = ff.getFile(Project.FILE_BLUEJ_PROJECT);
+                this.currentProject = ProjectUtilsKt.loadFromProjectFile(projfile);
+                this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
+                this.toggleProjectButtons(true);
+                this.toggleFileButtons(true);
+                refreshList();
+                return true;
+            }
+            showError("Whoops! There seems to be no project here!\nWould you like to create a project instead?",
+                    this::createProjectHandler
+            );
+            return false;
+        }else{
+            if(f.getName().equals(Project.FILE_BLUEJ_PROJECT)){
+                this.currentProject = ProjectUtilsKt.loadFromProjectFile(f);
+                this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
+                this.toggleProjectButtons(true);
+                this.toggleFileButtons(true);
+                refreshList();
+                return true;
+            }
+            showError("Whoops! There seems to be no project here!\nWould you like to create a project instead?",
+                    this::createProjectHandler
+            );
+            return false;
+        }
+    }
+
 	private void openProjectHandler(int x, int y, int button) {
 		SelectFolder file = new SelectFolder(this);
-		file.setResponseHandler((ok, f) -> {
-			if (ok) {
-				unloadProject(() -> {
-					loadProject(f, () -> {
-					});
-				});
-			}
-			return true;
-		});
+		file.setResponseHandler((ok, f) -> !ok || this.openProject(f));
 		openDialog(file);
 	}
+
+	private void showError(String error, ClickListener listener){
+        Dialog.Confirmation confirm = new Dialog.Confirmation();
+        confirm.setMessageText(error);
+        confirm.setPositiveListener(listener);
+        openDialog(confirm);
+    }
 
 	////////////////// Project Sources Buttons //////////////////
 
@@ -211,12 +246,7 @@ public class BlueJApp extends Application {
 		CreateSourceFile file = new CreateSourceFile("File name");
 		file.setResponseHandler((ok, f) -> {
 			if (ok) {
-				SourceFile createdFile = currentProject.createSourceFile(f, () -> {
-					lstFiles.setItems(new ArrayList<>());
-					for (SourceFile srcF : currentProject.getSrc()) {
-						lstFiles.addItem(srcF.getFile().getName());
-					}
-                });
+				SourceFile createdFile = currentProject.createSourceFile(f, this::refreshList);
                 if(file.getIsStartupFile().isSelected()) {
                     currentProject.setStartupFile(createdFile);
                 }
@@ -225,6 +255,13 @@ public class BlueJApp extends Application {
 		});
 		openDialog(file);
 	}
+
+	private void refreshList(){
+        lstFiles.setItems(new ArrayList<>());
+        for (SourceFile srcF : currentProject.getSrc()) {
+            lstFiles.addItem(srcF.getFile().getName());
+        }
+    }
 
 	private void deleteSourceFileHandler(int x, int y, int button) {
 		String name = lstFiles.getSelectedItem();
@@ -238,16 +275,19 @@ public class BlueJApp extends Application {
 			}
 		});
 		this.txtCodeEditor.clear();
+		refreshList();
 	}
 
 	private void saveSourceFile(){
         String name = lstFiles.getSelectedItem();
         SourceFile source = currentProject.getSourceFile(name);
-        if (source != null)
-            source.setSource(txtCodeEditor.getText(), () -> {
-            });
+        if (source != null){
+            source.setSource(txtCodeEditor.getText());
+            System.out.println(source.getData().toString());
+        }
         this.btnSaveFile.setEnabled(false);
         this.enabledComponents.remove(this.btnSaveFile);
+        this.currentProject.save();
     }
 
 	////////////////// Files listener //////////////////
@@ -295,7 +335,6 @@ public class BlueJApp extends Application {
 
 	private void toggleFileButtons(boolean b) {
 		txtCodeEditor.setEditable(b);
-		btnDeleteFile.setEnabled(b);
 		btnSaveFile.setEnabled(b);
 		btnPaste.setEnabled(b);
 		btnCopyAll.setEnabled(b);
@@ -308,8 +347,8 @@ public class BlueJApp extends Application {
         }
 	}
 
-	private void loadProject(Folder f, Runnable runnable) {
-		if(!Project.loadProject(f, loadProject(runnable))){
+	private void loadProject(Project project, Runnable runnable) {
+		if(!project.load(loadProject(runnable))){
 		    this.openDialog(new Dialog.Message("Could not load project! Project does not exist!"));
         }
 	}
@@ -326,7 +365,8 @@ public class BlueJApp extends Application {
             }
             this.txtCodeEditor.setHighlight(this.currentProject.getProjectLanguage());
             toggleProjectButtons(true);
-            runnable.run();
+            if(runnable != null)
+                runnable.run();
         };
     }
 
@@ -335,7 +375,8 @@ public class BlueJApp extends Application {
 
 		currentProject = null;
 		toggleProjectButtons(false);
-		runnable.run();
+		if(runnable != null)
+    		runnable.run();
 	}
 
 	private void loadSourceFile(String name) {
@@ -353,8 +394,7 @@ public class BlueJApp extends Application {
 	public void onClose() {
 		super.onClose();
 
-		unloadProject(() -> {
-		});
+		unloadProject(null);
 	}
 
 	@Override

@@ -69,6 +69,7 @@ public class SelectFolder extends Dialog {
 				}else {
 					responseHandler.onResponse(true, (Folder) browser.getSelectedFile());
 				}
+				System.out.println(browser.getSelectedFile().getName());
 				close();
 			}
 		});

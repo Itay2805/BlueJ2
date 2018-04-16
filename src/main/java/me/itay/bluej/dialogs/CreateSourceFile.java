@@ -79,6 +79,7 @@ public class CreateSourceFile extends Dialog
                 boolean close = true;
                 if(responseListener != null)
                 {
+                    System.out.println(textFieldInput.getText().trim());
                     close = responseListener.onResponse(true, textFieldInput.getText().trim());
                 }
                 if(close) close();
