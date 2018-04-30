@@ -53,8 +53,8 @@ fun loadFromProjectFile(file: File): Project?{
     return null
 }
 
-fun createProject(projectRoot: Folder, name: String, lang: BlueJLanguage, runnable: Runnable?): File? {
-    var projectfile: File? = null
+fun createProject(projectRoot: Folder, name: String, lang: BlueJLanguage): Project? {
+    var projectfile: File?
     createFolder(projectRoot, "src", Runnable{
         createFolder(projectRoot, "res", Runnable{
             createFolder(projectRoot, "build", Runnable {
@@ -64,12 +64,11 @@ fun createProject(projectRoot: Folder, name: String, lang: BlueJLanguage, runnab
                 projtag.setString(FIELD_LANG, lang.name)
                 projectfile = File(FILE_BLUEJ_PROJECT, BlueJApp.id, projtag)
                 projectRoot.add(projectfile) { _, _ ->
-                    runnable?.run()
                 }
             })
         })
     })
-    return projectfile
+    return Project(projectRoot, name, lang)
 }
 
 private fun createFolder(parent: Folder, name: String, runnable: Runnable) {
@@ -79,7 +78,7 @@ private fun createFolder(parent: Folder, name: String, runnable: Runnable) {
                 runnable.run()
             } else {
                 // @Todo do proper error handling
-                System.err.println("[ERROR] could not create folder: " + Objects.requireNonNull<FileSystem.Response>(resp).message)
+                System.err.println("[ERROR] could not create folder: " + resp?.message)
             }
         }
     } else {

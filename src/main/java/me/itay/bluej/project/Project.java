@@ -9,11 +9,10 @@ import com.mrcrayfish.device.api.io.File;
 import com.mrcrayfish.device.api.io.Folder;
 
 import me.itay.bluej.BlueJApp;
+import me.itay.bluej.api.NoSourceFileSelectedException;
 import me.itay.bluej.languages.BlueJLanguage;
-import me.itay.bluej.languages.BlueJRuntimeManager;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
-import net.minecraftforge.common.util.Constants.NBT;
 
 public class Project {
 
@@ -40,7 +39,7 @@ public class Project {
         this.projectFile = this.projectRoot.getFile(FILE_BLUEJ_PROJECT);
 	}
 
-	public void save() {
+	public NBTTagCompound save() {
 	    NBTTagCompound projectdata = new NBTTagCompound();
 	    projectdata.setString(FIELD_ROOT, this.projectRoot.getName());
 	    projectdata.setString(FIELD_NAME, this.name);
@@ -66,6 +65,7 @@ public class Project {
             projectdata.setTag(FIELD_FILES_LIST, files);
         }
         this.projectFile.setData(projectdata);
+	    return projectdata;
 	}
 
 	public void setStartupFile(SourceFile startupFile) {
@@ -106,7 +106,6 @@ public class Project {
 
 	public void addSourceFile(SourceFile sourcefile){
         src.add(sourcefile);
-        save();
     }
 
     /**
@@ -117,7 +116,7 @@ public class Project {
      * @return the source file
      */
 	public SourceFile createSourceFile(String name, Runnable runnable) {
-		File f = new File(name, BlueJApp.id, new NBTTagCompound());
+		File f = new File(name, BlueJApp.Companion.getId(), new NBTTagCompound());
 		Objects.requireNonNull(projectRoot.getFolder("src")).add(f, (resp, ok) -> {
 			if(ok) {
 				addSourceFile(new SourceFile(f));
@@ -132,21 +131,25 @@ public class Project {
 
 	public void deleteSourceFile(String name, Runnable runnable) {
         SourceFile srcF = getSourceFile(name);
-        src.remove(srcF);
-        srcF.getFile().delete((resp, ok) -> {
-            if (ok) {
-                runnable.run();
-            } else {
-                // @Todo proper error handling
-                System.err.println("[ERROR] Could not remove source file: " + Objects.requireNonNull(resp).getMessage());
-            }
-        });
-    }
+		src.remove(srcF);
+			srcF.getFile().delete((resp, ok) -> {
+				if (ok) {
+				    if(runnable != null){
+                        runnable.run();
+                    }
+				} else {
+					try {
+						throw new NoSourceFileSelectedException();
+					} catch (NoSourceFileSelectedException e) {
+						System.out.println(e.getMessage() + e.getCause().getMessage());
+						e.printStackTrace();
+					}
+				}
+			});
+	}
 
 	public boolean load(Consumer<Project> consumer) {
 	    Folder projectFolder = this.projectRoot;
-	    System.out.println("projectFolder: " + projectFolder.getName());
-	    System.out.println("Files in project folder: ");
         projectFolder.getFiles().forEach((f)-> System.out.println("\t" + f.getName()));
 		if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) {
 			if (Objects.requireNonNull(projectFolder.getParent()).hasFile(FILE_BLUEJ_PROJECT)) {

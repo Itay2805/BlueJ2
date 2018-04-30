@@ -10,7 +10,7 @@ public class BlueJResourceLocation {
 	private String context;
 	private String path;
 	
-	private static final String RESOURCE_LOCATION_REGEX = "^([a-zA-Z0-9_\\-\\.]+):(?:\\/\\/|\\\\\\\\)((\\[[\\[\\]a-zA-Z0-9_\\-\\\\\\/\\.:]+\\])|([a-zA-Z0-9_\\-\\.]+))(((?:\\/|\\\\)[a-zA-Z0-9_\\-\\\\\\/\\.]+).|(?:\\/|\\\\))";
+	private static final String RESOURCE_LOCATION_REGEX = "^([a-zA-Z0-9_\\-.]+):(?://|\\\\\\\\)((\\[[\\[\\]a-zA-Z0-9_\\-\\\\/.:]+])|([a-zA-Z0-9_\\-.]+))(([/\\\\][a-zA-Z0-9_\\-\\\\/.]+).|[/\\\\])";
 	private static final Pattern PATTERN = Pattern.compile(RESOURCE_LOCATION_REGEX);
 	
 	public BlueJResourceLocation(String domain, String context, String path) {

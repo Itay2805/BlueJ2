@@ -19,11 +19,12 @@ public class BlueJMod
     public static final String MODID = "bluej";
     public static final String VERSION = "2.0.0";
     public static final Logger LOGGER = LogManager.getLogger(MODID);
+    public static final ResourceLocation APP_ID = new ResourceLocation("bluej", "ide");
     
     @EventHandler
     public void init(FMLInitializationEvent event)
     {
         registerLanguage(new JavaScriptRuntime());
-    	ApplicationManager.registerApplication(new ResourceLocation("bluej", "ide"), BlueJApp.class);
+    	ApplicationManager.registerApplication(APP_ID, BlueJApp.class);
     }
 }

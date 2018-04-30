@@ -12,13 +12,13 @@ import net.minecraft.nbt.NBTTagCompound;
 public interface BlueJResolvedResource {
 	
 	public void setOpenAppID(String appid, Runnable runnable);
-	
+
 	public void mkdirs(Runnable runnable);
 	public void create(Runnable runnable);
 	public void delete(Runnable runnable);
 	public void read(Consumer<NBTTagCompound> consumer);
 	public void write(NBTTagCompound compound, Runnable runnable);
-	
+
 	public default void mkdirsSync() {
 		final AtomicBoolean bool = new AtomicBoolean(false);
 		mkdirs(() -> {
@@ -32,7 +32,7 @@ public interface BlueJResolvedResource {
 			}
 		}
 	}
-	
+
 	public default void createSync() {
 		final AtomicBoolean bool = new AtomicBoolean(false);
 		create(() -> {
@@ -46,7 +46,7 @@ public interface BlueJResolvedResource {
 			}
 		}
 	}
-	
+
 	public default void deleteSync() {
 		final AtomicBoolean bool = new AtomicBoolean(false);
 		delete(() -> {
@@ -60,7 +60,7 @@ public interface BlueJResolvedResource {
 			}
 		}
 	}
-	
+
 	public default NBTTagCompound readSync() {
 		final AtomicReference<NBTTagCompound> ref = new AtomicReference<NBTTagCompound>(null);
 		read((data) -> {
@@ -75,7 +75,7 @@ public interface BlueJResolvedResource {
 		}
 		return ref.get();
 	}
-	
+
 	public default void writeSync(NBTTagCompound data) {
 		final AtomicBoolean bool = new AtomicBoolean(false);
 		write(data, () -> {
@@ -89,7 +89,7 @@ public interface BlueJResolvedResource {
 			}
 		}
 	}
-	
+
 	public boolean isFile();
 	public boolean isFolder();
 	public Folder getParent();
