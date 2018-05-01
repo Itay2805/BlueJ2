@@ -1,5 +1,6 @@
 package me.itay.bluej.dialogs
 
+import com.mrcrayfish.device.api.app.Layout
 import com.mrcrayfish.device.core.Wrappable
 import me.itay.bluej.api.components.BlueJMessageDialog
 import net.minecraft.client.Minecraft
@@ -26,16 +27,17 @@ class ErrorDialog(
             else -> Color.DARK_GRAY
         }
 ){
+    private var h = 40
+    private val layout = Layout(150, h)
     init{
-        this.dwidth = 150
-        this.dheight = 40
+        layout.width = 150
         this.dtitle = errorcode.errorname
     }
 
     override fun init() {
         super.init()
         val lines = Minecraft.getMinecraft().fontRenderer.listFormattedStringToWidth(message, this.width)
-        this.dheight += (lines.size - 1) * 9
+        h += (lines.size - 1) * 9
 
         this.defaultLayout.setBackground{ _, _, x, y, w, h, _, _, _ ->
             Gui.drawRect(x, y, x + width, y + height, Color.GRAY.rgb)

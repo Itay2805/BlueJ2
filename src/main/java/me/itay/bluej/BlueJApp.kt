@@ -6,6 +6,7 @@ import com.mrcrayfish.device.api.app.component.Button
 import com.mrcrayfish.device.api.app.component.ItemList
 import com.mrcrayfish.device.api.app.component.TextArea
 import me.itay.bluej.api.NoProjectLoadedException
+import me.itay.bluej.api.NoSourceFileSelectedException
 import me.itay.bluej.project.Project
 import me.itay.bluej.project.SourceFile
 import me.itay.bluej.utils.*
@@ -32,8 +33,26 @@ class BlueJApp : Application(){
     val btnSettings = Button(getNextBtnPos(), 1, Icons.WRENCH)
 
     var editorToggled = false
+    set(t){
+        this.btnCopyAll.setEnabled(t)
+        this.btnPaste.setEnabled(t)
+        this.txtCodeEditor.setEnabled(t)
+        this.btnDeleteFile.setEnabled(t)
+        field = t
+    }
     var projectToggled = false
+    set(t){
+        this.btnNewFile.setEnabled(t)
+        this.btnSaveProject.setEnabled(t)
+        this.btnExportProject.setEnabled(t)
+        field = t
+    }
     var runtimeToggled = false
+    set(t){
+        this.btnRun.setEnabled(t)
+        this.btnStop.setEnabled(t)
+        field = t
+    }
 
     private var leftPanelWidth = 80
     private var middlePanelWidth = 280
@@ -63,11 +82,25 @@ class BlueJApp : Application(){
     var currentProject: Project? = null
         get(){
             if(field != null){
-                return field as Project
+                return field!!
             }
             throw NoProjectLoadedException()
         }
+        set(f){
+            this.projectToggled = true
+            field = f
+        }
     var currentSourceFile: SourceFile? = null
+        get(){
+            if(field != null){
+                return field!!
+            }
+            throw NoSourceFileSelectedException()
+        }
+        set(f){
+            field = f
+            this.editorToggled = true
+        }
 
     override fun init() {
         setDefaultWidth(WIDTH)
@@ -143,32 +176,13 @@ class BlueJApp : Application(){
         // disable project buttons until a project is loaded
 
         id = getInfo().formattedId
+        projectToggled = false
+        editorToggled = false
+        runtimeToggled = false
 
-        toggleProjectButtons(true)
-        toggleEditorButtons(false)
-        toggleRuntimeButtons(false)
-    }
-
-    fun toggleProjectButtons(toggle: Boolean){
-        this.btnNewProject.setEnabled(toggle)
-        this.btnOpenProject.setEnabled(toggle)
-        this.btnSettings.setEnabled(toggle)
-        this.btnNewFile.setEnabled(toggle)
-        this.projectToggled = toggle
-    }
-
-    fun toggleEditorButtons(toggle: Boolean){
-        this.btnCopyAll.setEnabled(toggle)
-        this.btnPaste.setEnabled(toggle)
-        this.txtCodeEditor.setEnabled(toggle)
-        this.btnDeleteFile.setEnabled(toggle)
-        this.editorToggled = toggle
-    }
-
-    fun toggleRuntimeButtons(toggle: Boolean){
-        this.btnRun.setEnabled(toggle)
-        this.btnStop.setEnabled(toggle)
-        this.runtimeToggled = toggle
+        this.btnNewProject.setEnabled(true)
+        this.btnOpenProject.setEnabled(true)
+        this.btnSettings.setEnabled(true)
     }
 
     override fun save(tagCompound: NBTTagCompound) {
