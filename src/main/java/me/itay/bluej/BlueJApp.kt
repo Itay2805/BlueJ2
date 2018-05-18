@@ -1,16 +1,23 @@
 package me.itay.bluej
 
+import com.mrcrayfish.device.api.ApplicationManager
 import com.mrcrayfish.device.api.app.Application
 import com.mrcrayfish.device.api.app.Icons
 import com.mrcrayfish.device.api.app.component.Button
 import com.mrcrayfish.device.api.app.component.ItemList
 import com.mrcrayfish.device.api.app.component.TextArea
-import me.itay.bluej.api.NoProjectLoadedException
-import me.itay.bluej.api.NoSourceFileSelectedException
+import com.mrcrayfish.device.api.app.renderer.ListItemRenderer
+import com.mrcrayfish.device.api.utils.RenderUtil
+import me.itay.bluej.api.error.NoProjectLoadedException
+import me.itay.bluej.api.error.NoSourceFileSelectedException
 import me.itay.bluej.project.Project
 import me.itay.bluej.project.SourceFile
 import me.itay.bluej.utils.*
+import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.Gui
+import net.minecraft.client.renderer.GlStateManager
 import net.minecraft.nbt.NBTTagCompound
+import java.awt.Color
 
 class BlueJApp : Application(){
     companion object {
@@ -162,7 +169,6 @@ class BlueJApp : Application(){
         addComponent(btnSettings)
 
         // setup layout
-
         listFiles.setItemClickListener(this::fileSelectedHandler)
 
         txtCodeEditor.setKeyListener { _ ->

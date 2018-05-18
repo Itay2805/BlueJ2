@@ -13,34 +13,34 @@ import net.minecraftforge.common.util.Constants
 import java.util.*
 
 fun loadFromProjectFile(file: File): Project?{
-    if(file.name != Project.FILE_BLUEJ_PROJECT){
+    if(file.name != FILE_BLUEJ_PROJECT){
         System.err.println("[ERROR] File is not a project file!")
         return null
     }
     val nbt = file.data!!
-    if(nbt.hasKey(Project.FIELD_NAME) && nbt.hasKey(Project.FIELD_LANG) && nbt.hasKey(Project.FIELD_ROOT)){
-        val root = nbt.getString(Project.FIELD_ROOT)
-        val name = nbt.getString(Project.FIELD_NAME)
-        val lang = nbt.getString(Project.FIELD_LANG)
+    if(nbt.hasKey(FIELD_NAME) && nbt.hasKey(FIELD_LANG) && nbt.hasKey(FIELD_ROOT)){
+        val root = nbt.getString(FIELD_ROOT)
+        val name = nbt.getString(FIELD_NAME)
+        val lang = nbt.getString(FIELD_LANG)
         var startup: File? = null
         val sourceFiles = ArrayList<File>()
-        if(nbt.hasKey(Project.FIELD_STARTUP)){
-            val startupnbt = nbt.getCompoundTag(Project.FIELD_STARTUP)
+        if(nbt.hasKey(FIELD_STARTUP)){
+            val startupnbt = nbt.getCompoundTag(FIELD_STARTUP)
             val startupname = if(nbt.hasKey("name")) nbt.getString("name") else ""
             if(startupname.isNotBlank()){
                 startup = File.fromTag(startupname, startupnbt)
             }
         }
-        if(nbt.hasKey(Project.FIELD_FILES_LIST)){
-            val filesnbt = nbt.getTagList(Project.FIELD_FILES_LIST, Constants.NBT.TAG_COMPOUND)
+        if(nbt.hasKey(FIELD_FILES_LIST)){
+            val filesnbt = nbt.getTagList(FIELD_FILES_LIST, Constants.NBT.TAG_COMPOUND)
             for(tag in filesnbt){
                 if(tag is NBTTagCompound){
-                    val f = File.fromTag(tag.getString("name"), tag.getCompoundTag(Project.FIELD_FILE + filesnbt.indexOf(tag)))
+                    val f = File.fromTag(tag.getString("name"), tag.getCompoundTag(FIELD_FILE + filesnbt.indexOf(tag)))
                     sourceFiles += f
                 }
             }
         }
-        val project = Project(file.parent, name, BlueJRuntimeManager.getLanguage(lang))
+        val project = Project(file.parent!!, name, BlueJRuntimeManager.getLanguage(lang))
         if(startup != null)
             project.startupFile = SourceFile(startup)
         if(sourceFiles.isNotEmpty()){

@@ -4,12 +4,9 @@ import javax.script.*;
 
 import me.itay.bluej.languages.BlueJLanguage;
 import me.itay.bluej.languages.BlueJRunResponse;
-import me.itay.bluej.languages.BlueJRuntimeManager;
 import me.itay.bluej.project.Project;
-import me.itay.bluej.resourcelocation.BlueJResourceLocation;
 import net.minecraft.util.text.TextFormatting;
 
-import java.io.IOException;
 import java.io.StringWriter;
 
 public class JavaScriptRuntime implements BlueJLanguage {

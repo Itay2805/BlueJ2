@@ -2,10 +2,13 @@ package me.itay.bluej.dialogs
 
 import com.mrcrayfish.device.api.app.Layout
 import com.mrcrayfish.device.core.Wrappable
+import me.itay.bluej.BlueJMod
 import me.itay.bluej.api.components.BlueJMessageDialog
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
 import java.awt.Color
+import java.io.OutputStream
+import java.io.PrintStream
 
 enum class ErrorCode(val errorname: String, val code: Int){
     INFO("info", 0),
@@ -43,8 +46,4 @@ class ErrorDialog(
             Gui.drawRect(x, y, x + width, y + height, Color.GRAY.rgb)
         }
     }
-}
-
-fun Wrappable.displayError(message: String, code: ErrorCode){
-    this.openDialog(ErrorDialog(code, message))
 }

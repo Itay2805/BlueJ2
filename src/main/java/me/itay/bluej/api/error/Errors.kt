@@ -1,6 +1,5 @@
-package me.itay.bluej.api
+package me.itay.bluej.api.error
 
-import com.mrcrayfish.device.core.Wrappable
 import me.itay.bluej.api.components.DialogAttr
 
 /**
