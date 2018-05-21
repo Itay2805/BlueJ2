@@ -37,7 +37,7 @@ minecraft {
 }
 
 dependencies {
-    compile "com.mrcrayfish:device-api:0.3.0-1.12.2"
+    compile "com.mrcrayfish:device-api:0.4.0-1.12.2"
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
 }

@@ -10,9 +10,13 @@ import com.mrcrayfish.device.core.Wrappable
 import com.mrcrayfish.device.core.io.FileSystem
 import com.mrcrayfish.device.programs.system.component.FileBrowser
 import me.itay.bluej.api.error.DialogAttributeValueOutOfBoundsError
+import me.itay.bluej.languages.BlueJLanguage
+import me.itay.bluej.languages.BlueJRuntimeManager
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
+import net.minecraft.nbt.NBTTagCompound
 import java.awt.Color
+import javax.annotation.Nullable
 
 open class BlueJDialog : Dialog() {
     val components = ArrayList<Component>()
@@ -62,8 +66,8 @@ open class BlueJMessageDialog(
     )
     val text = Text(this.message, 5, 5, this.width - 10)
 
-    override fun init() {
-        super.init()
+    override fun init(intent: NBTTagCompound?) {
+        super.init(intent)
 
         val lines = Minecraft.
                 getMinecraft().
@@ -102,8 +106,8 @@ abstract class BasicDialog<T> : BlueJDialog(){
 
     abstract fun render()
 
-    override fun init() {
-        super.init()
+    override fun init(intent: NBTTagCompound?) {
+        super.init(intent)
         this.render()
         main.addComponent(buttonPositive)
         this.buttonPositive.setClickListener { x, y, b->
@@ -117,6 +121,20 @@ abstract class BasicDialog<T> : BlueJDialog(){
 
         this.setLayout(main)
     }
+}
+
+class BlueJSelectFromListDialog : BasicDialog<String>(){
+    var list = ComboBox.List<String>(5, 5, arrayOf<String>())
+
+    override fun render() {
+        list.setItems(BlueJRuntimeManager.getRuntimes().keys.toTypedArray())
+        this += list
+        this.clickListeners += ClickListener { _, _, _ ->
+            this.responseHandler?.onResponse(true, list.selectedItem)
+            close()
+        }
+    }
+
 }
 
 @Suppress("UNCHECKED_CAST")

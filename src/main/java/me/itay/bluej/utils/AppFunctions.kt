@@ -1,13 +1,17 @@
 package me.itay.bluej.utils
 
 import com.mrcrayfish.device.api.app.Dialog
+import com.mrcrayfish.device.api.app.component.ComboBox
 import com.mrcrayfish.device.api.io.Folder
 import me.itay.bluej.BlueJApp
 import me.itay.bluej.BlueJConsoleDialog
 import me.itay.bluej.api.components.BlueJCreateFileDialog
+import me.itay.bluej.api.components.BlueJSelectFromListDialog
 import me.itay.bluej.api.components.BrowserDialog
 import me.itay.bluej.api.components.ResourceFolder
 import me.itay.bluej.api.error.BlueJComponentToggleException
+import me.itay.bluej.api.error.ErrorCode
+import me.itay.bluej.api.error.displayError
 import me.itay.bluej.dialogs.*
 import me.itay.bluej.languages.BlueJRuntimeManager
 import me.itay.bluej.project.*
@@ -19,8 +23,9 @@ fun BlueJApp.createProjectHandler(mx: Int, my: Int, mb: Int){
             val input = Dialog.Input("Project Name")
             input.setResponseHandler { s1, e1 ->
                 if (s1) {
-                    val langselect = SelectLanguageDialog()
-                    langselect.setResponseHandler { s2, e2 ->
+                    val langselect = BlueJSelectFromListDialog()
+                    langselect.list = ComboBox.List(5, 5, this.listFiles.items.toTypedArray())
+                    langselect.responseHandler = Dialog.ResponseHandler { s2, e2 ->
                         if (s2) {
                             this.currentProject = createProject(e.folder, e1, BlueJRuntimeManager.getLanguage(e2))!!
                             this.refreshFilesList()
@@ -42,18 +47,15 @@ fun BlueJApp.openProjectHandler(mx: Int, my: Int, mb: Int){
     val folderselect = BrowserDialog<ResourceFolder>()
     folderselect.responseHandler = Dialog.ResponseHandler { success, e ->
         if (success) {
-            val folder = e.folder
-            val projectfile = folder.getFile(FILE_BLUEJ_PROJECT)
-            val nbt = projectfile?.data!!
-            if (nbt.hasKey(FIELD_NAME) && nbt.hasKey(FIELD_ROOT) && nbt.hasKey(FIELD_LANG)) {
-                val name = nbt.getString(FIELD_NAME)
-                val root = nbt.getString(FIELD_ROOT)
-                val lang = nbt.getString(FIELD_LANG)
-                this.currentProject = Project(Folder(root), name, BlueJRuntimeManager.getLanguage(lang))
-                this.refreshFilesList()
+            val projectfile = e.folder.getFileSync(FILE_BLUEJ_PROJECT)
+            if(projectfile != null){
+                this.currentProject = loadFromProjectFile(projectfile!!)
+                refreshFilesList()
+                return@ResponseHandler true
             }
+            displayError("No project exists in this folder!", ErrorCode.ERROR)
         }
-        success
+        false
     }
     openDialog(folderselect)
 }

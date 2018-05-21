@@ -1,14 +1,11 @@
-package me.itay.bluej.dialogs
+package me.itay.bluej.api.error
 
 import com.mrcrayfish.device.api.app.Layout
-import com.mrcrayfish.device.core.Wrappable
-import me.itay.bluej.BlueJMod
 import me.itay.bluej.api.components.BlueJMessageDialog
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
+import net.minecraft.nbt.NBTTagCompound
 import java.awt.Color
-import java.io.OutputStream
-import java.io.PrintStream
 
 enum class ErrorCode(val errorname: String, val code: Int){
     INFO("info", 0),
@@ -37,8 +34,8 @@ class ErrorDialog(
         this.dtitle = errorcode.errorname
     }
 
-    override fun init() {
-        super.init()
+    override fun init(intent: NBTTagCompound?) {
+        super.init(intent)
         val lines = Minecraft.getMinecraft().fontRenderer.listFormattedStringToWidth(message, this.width)
         h += (lines.size - 1) * 9
 

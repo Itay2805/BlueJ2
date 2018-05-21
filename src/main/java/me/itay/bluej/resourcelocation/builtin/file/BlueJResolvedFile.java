@@ -15,13 +15,15 @@ import com.mrcrayfish.device.programs.system.component.FileBrowser;
 import me.itay.bluej.resourcelocation.BlueJResolvedResource;
 import net.minecraft.nbt.NBTTagCompound;
 
+import javax.annotation.Nullable;
+
 public class BlueJResolvedFile implements BlueJResolvedResource {
 	
 	private static class FakeApp extends Application {
 		public void save(NBTTagCompound tagCompound) {}
 		public void load(NBTTagCompound tagCompound) {}
-		public void init() {}
-	};
+		public void init(@Nullable NBTTagCompound intent) {}
+	}
 	
 	private static final FakeApp INSTANCE = new FakeApp();
 	
@@ -34,7 +36,7 @@ public class BlueJResolvedFile implements BlueJResolvedResource {
 		if(Laptop.getMainDrive() == null) {
 			FileBrowser browser = new FileBrowser(0, 0, INSTANCE, FileBrowser.Mode.BASIC);
 			browser.init(new Layout());
-			browser.handleOnLoad();
+			browser.handleLoad();
 		}
 		
 		/// @Cleanup @Hack this is a temp hack to make sure it will load

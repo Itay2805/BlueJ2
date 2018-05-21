@@ -6,14 +6,11 @@ import com.mrcrayfish.device.core.io.FileSystem
 import me.itay.bluej.BlueJApp
 import me.itay.bluej.api.error.NoSourceFileSelectedException
 import me.itay.bluej.languages.BlueJLanguage
-import me.itay.bluej.utils.Extensions
-import me.itay.bluej.utils.getFileSync
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraft.nbt.NBTTagList
 import java.util.*
 import java.util.function.Consumer
 
-const val FIELD_ROOT = "root"
 const val FIELD_NAME = "name"
 const val FIELD_LANG = "lang"
 const val FIELD_STARTUP = "startup"
@@ -29,22 +26,21 @@ class Project(val projectRoot: Folder, private val name: String, val projectLang
             field = startupFile
 
             val projectFile = projectRoot.getFile(FILE_BLUEJ_PROJECT)
-            val compound = Objects.requireNonNull<File>(projectFile).data
+            val compound = projectFile?.data!!
 
             if (startupFile == null) {
-                Objects.requireNonNull<NBTTagCompound>(compound).removeTag(FIELD_STARTUP)
+                compound.removeTag(FIELD_STARTUP)
             } else {
-                Objects.requireNonNull<NBTTagCompound>(compound).setString(FIELD_STARTUP, startupFile.name)
+                compound.setString(FIELD_STARTUP, startupFile.name)
             }
 
-            projectFile!!.data = compound
+            projectFile.data = compound
         }
     private val projectFile: File?
-        get() = this.projectRoot.getFileSync(FILE_BLUEJ_PROJECT)
+        get() = this.projectRoot.getFile(FILE_BLUEJ_PROJECT)
 
     fun save(): NBTTagCompound {
         val projectdata = NBTTagCompound()
-        projectdata.setString(FIELD_ROOT, this.projectRoot.name)
         projectdata.setString(FIELD_NAME, this.name)
         projectdata.setString(FIELD_LANG, this.projectLanguage.name)
         if (this.startupFile != null) {
@@ -120,26 +116,5 @@ class Project(val projectRoot: Folder, private val name: String, val projectLang
 
             }
         }
-    }
-
-    fun load(consumer: Consumer<Project>): Boolean {
-        var projectFolder: Folder? = this.projectRoot
-        projectFolder!!.files.forEach { f -> println("\t" + f.name) }
-        if (!projectFolder.hasFile(FILE_BLUEJ_PROJECT)) {
-            if (Objects.requireNonNull<Folder>(projectFolder.parent).hasFile(FILE_BLUEJ_PROJECT)) {
-                projectFolder = projectFolder.parent
-            } else {
-                // @Todo return proper errors
-                return false
-            }
-        }
-
-        val projectFile = projectFolder!!.getFile(FILE_BLUEJ_PROJECT)
-        val project = loadFromProjectFile(projectFile!!)
-        if (project != null) {
-            consumer.accept(project)
-            return true
-        }
-        return false
     }
 }

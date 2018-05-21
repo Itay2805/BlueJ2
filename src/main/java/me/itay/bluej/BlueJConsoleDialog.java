@@ -11,16 +11,19 @@ import com.mrcrayfish.device.api.app.component.Button;
 import com.mrcrayfish.device.api.app.component.Text;
 import com.mrcrayfish.device.api.app.listener.ClickListener;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.NBTTagCompound;
 import org.apache.commons.io.output.TeeOutputStream;
+
+import javax.annotation.Nullable;
 
 public class BlueJConsoleDialog extends Dialog {
 
 	private StringBuffer output = new StringBuffer();
 
 	@Override
-	public void init()
+	public void init(@Nullable NBTTagCompound intent)
 	{
-		super.init();
+		super.init(intent);
 
 		int lines = Minecraft.getMinecraft().fontRenderer.listFormattedStringToWidth(output.toString(), getWidth() - 10).size();
 		defaultLayout.height += (lines - 1) * 9;

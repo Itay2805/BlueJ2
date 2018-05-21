@@ -1,8 +1,6 @@
 package me.itay.bluej.api.error
 
 import com.mrcrayfish.device.core.Wrappable
-import me.itay.bluej.dialogs.ErrorCode
-import me.itay.bluej.dialogs.ErrorDialog
 import net.minecraft.realms.Tezzelator.t
 import java.io.OutputStream
 import java.io.PrintStream
@@ -82,10 +80,5 @@ class BlueJErrorStream(ridingStream: OutputStream) : BlueJCustomStream(ridingStr
 }
 
 fun Wrappable.displayError(message: String, code: ErrorCode){
-    when(code.code){
-        0 -> this.openDialog(ErrorDialog(code, message))
-        1 -> {
-            this.openDialog(ErrorDialog(code, message))
-        }
-    }
+    this.openDialog(ErrorDialog(code, message))
 }

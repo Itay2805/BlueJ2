@@ -7,11 +7,14 @@ import com.mrcrayfish.device.api.app.component.Button
 import com.mrcrayfish.device.api.app.component.ItemList
 import com.mrcrayfish.device.api.app.component.TextArea
 import com.mrcrayfish.device.api.app.renderer.ListItemRenderer
+import com.mrcrayfish.device.api.io.Folder
 import com.mrcrayfish.device.api.utils.RenderUtil
 import me.itay.bluej.api.error.NoProjectLoadedException
 import me.itay.bluej.api.error.NoSourceFileSelectedException
+import me.itay.bluej.project.FILE_BLUEJ_PROJECT
 import me.itay.bluej.project.Project
 import me.itay.bluej.project.SourceFile
+import me.itay.bluej.project.loadFromProjectFile
 import me.itay.bluej.utils.*
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.Gui
@@ -109,7 +112,7 @@ class BlueJApp : Application(){
             this.editorToggled = true
         }
 
-    override fun init() {
+    override fun init(intent: NBTTagCompound?) {
         setDefaultWidth(WIDTH)
         setDefaultHeight(HEIGHT)
 
@@ -172,6 +175,7 @@ class BlueJApp : Application(){
         listFiles.setItemClickListener(this::fileSelectedHandler)
 
         txtCodeEditor.setKeyListener { _ ->
+            this.currentSourceFile?.source = this.txtCodeEditor.text
             btnSaveProject.setEnabled(true)
             true
         }
@@ -191,11 +195,17 @@ class BlueJApp : Application(){
         this.btnSettings.setEnabled(true)
     }
 
+    override fun onClose() {
+        super.onClose()
+        this.listFiles.items.clear()
+        this.txtCodeEditor.clear()
+    }
+
     override fun save(tagCompound: NBTTagCompound) {
-        tagCompound.setTag("project", this.currentProject?.save()!!)
+
     }
 
     override fun load(tagCompound: NBTTagCompound) {
-    }
 
+    }
 }

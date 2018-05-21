@@ -8,6 +8,7 @@ import com.mrcrayfish.device.api.app.component.TextField;
 import me.itay.bluej.languages.BlueJRuntimeManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.nbt.NBTTagCompound;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,9 +36,9 @@ public class SelectLanguageDialog extends Dialog{
     }
 
     @Override
-    public void init()
+    public void init(@Nullable NBTTagCompound intent)
     {
-        super.init();
+        super.init(intent);
 
         int offset = 0;
 

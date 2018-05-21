@@ -7,6 +7,7 @@ import com.mrcrayfish.device.api.io.Folder
 import com.mrcrayfish.device.api.task.TaskManager
 import com.mrcrayfish.device.core.Laptop
 import com.mrcrayfish.device.core.io.task.TaskGetFiles
+import net.minecraft.client.Minecraft
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraftforge.common.util.Constants
 
@@ -16,17 +17,12 @@ import net.minecraftforge.common.util.Constants
  * all files since all files are saved on the server and must be retrieved by a task.
  */
 fun Folder.getFilesSync(): List<File>{
-    val files = arrayListOf<File>()
     val task = TaskGetFiles(this, Laptop.getPos())
     task.setCallback { nbt, success ->
         if(success){
             if(nbt?.hasKey("files", Constants.NBT.TAG_LIST)!!){
                 val list = nbt.getTagList("files", Constants.NBT.TAG_COMPOUND)
-                for(file in list){
-                    file as NBTTagCompound
-                    val f = File.fromTag(file.getString("file_name"), file.getCompoundTag("data"))
-                    files.add(f)
-                }
+                this.syncFiles(list)
             }
         }
     }

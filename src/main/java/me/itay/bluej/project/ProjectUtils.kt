@@ -2,12 +2,9 @@ package me.itay.bluej.project
 
 import com.mrcrayfish.device.api.io.File
 import com.mrcrayfish.device.api.io.Folder
-import com.mrcrayfish.device.core.Laptop
-import com.mrcrayfish.device.core.io.FileSystem
 import me.itay.bluej.BlueJApp
 import me.itay.bluej.languages.BlueJLanguage
 import me.itay.bluej.languages.BlueJRuntimeManager
-import me.itay.bluej.project.Project.*
 import net.minecraft.nbt.NBTTagCompound
 import net.minecraftforge.common.util.Constants
 import java.util.*
@@ -18,8 +15,8 @@ fun loadFromProjectFile(file: File): Project?{
         return null
     }
     val nbt = file.data!!
-    if(nbt.hasKey(FIELD_NAME) && nbt.hasKey(FIELD_LANG) && nbt.hasKey(FIELD_ROOT)){
-        val root = nbt.getString(FIELD_ROOT)
+    if(nbt.hasKey(FIELD_NAME) && nbt.hasKey(FIELD_LANG)){
+        val rootfolder = file.parent
         val name = nbt.getString(FIELD_NAME)
         val lang = nbt.getString(FIELD_LANG)
         var startup: File? = null
@@ -40,7 +37,7 @@ fun loadFromProjectFile(file: File): Project?{
                 }
             }
         }
-        val project = Project(file.parent!!, name, BlueJRuntimeManager.getLanguage(lang))
+        val project = Project(rootfolder!!, name, BlueJRuntimeManager.getLanguage(lang))
         if(startup != null)
             project.startupFile = SourceFile(startup)
         if(sourceFiles.isNotEmpty()){
@@ -54,7 +51,6 @@ fun loadFromProjectFile(file: File): Project?{
 }
 
 fun createProject(projectRoot: Folder, name: String, lang: BlueJLanguage): Project? {
-    var projectfile: File?
     createFolder(projectRoot, "src", Runnable{
         createFolder(projectRoot, "res", Runnable{
             createFolder(projectRoot, "build", Runnable {
@@ -62,8 +58,14 @@ fun createProject(projectRoot: Folder, name: String, lang: BlueJLanguage): Proje
                 projtag.setString("root", projectRoot.name)
                 projtag.setString(FIELD_NAME, name)
                 projtag.setString(FIELD_LANG, lang.name)
-                projectfile = File(FILE_BLUEJ_PROJECT, BlueJApp.id, projtag)
-                projectRoot.add(projectfile) { _, _ ->
+                val file = File(FILE_BLUEJ_PROJECT, BlueJApp.id, projtag)
+                projectRoot.add(file) { resp, ok ->
+                    if(!ok) {
+                        throw IllegalStateException(
+                                """Failed to add project file to root folder.
+                                    |This is a required operation!
+                                    |Please report to the author!""".trimMargin())
+                    }
                 }
             })
         })
